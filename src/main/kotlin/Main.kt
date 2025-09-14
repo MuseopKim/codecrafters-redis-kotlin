@@ -1,4 +1,8 @@
+import java.io.InputStream
+import java.io.Reader
+import java.io.Writer
 import java.net.ServerSocket
+import java.net.Socket
 
 fun main(args: Array<String>) {
     var serverSocket = ServerSocket(6379)
@@ -6,13 +10,20 @@ fun main(args: Array<String>) {
     // ensures that we don't run into 'Address already in use' errors
     serverSocket.reuseAddress = true
 
-    val clientSocket = serverSocket.accept()
-    println("accepted new connection")
+    while (true) {
+        val clientSocket = serverSocket.accept()
 
-    val reader = clientSocket.inputStream.bufferedReader()
-    val writer = clientSocket.outputStream.bufferedWriter()
+        Thread({ handleSession(clientSocket) }).start()
+    }
+}
 
-    while (!clientSocket.isClosed) {
+fun handleSession(
+    socket: Socket,
+) {
+    val reader = socket.inputStream.bufferedReader()
+    val writer = socket.outputStream.bufferedWriter()
+
+    while (!socket.isClosed) {
         reader.forEachLine {
             if (it.startsWith("PING")) {
                 writer.write("+PONG\r\n")
