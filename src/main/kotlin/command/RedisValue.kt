@@ -14,10 +14,12 @@ sealed class RedisValue {
     class BulkString(val value: String) : RedisValue() {
 
         override fun encodeValue(): String {
-            value ?: return "$0\r\n\r\n"
-
             return "$${value.length}\r\n${value}\r\n"
         }
+    }
+
+    object NullBulkString : RedisValue() {
+        override fun encodeValue(): String = "$-1\r\n"
     }
 
     class Array(val elements: List<RedisValue>) : RedisValue() {
