@@ -1,13 +1,16 @@
-import java.io.Reader
-import java.io.Writer
+import command.CommandDispatcher
+import command.RedisCommandParser
+import command.RedisDataStore
+import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.net.Socket
 
 class Session(
     private val socket: Socket
 ) : Runnable {
 
-    private val reader: Reader
-    private val writer: Writer
+    private val reader: BufferedReader
+    private val writer: BufferedWriter
 
     init {
         socket.soTimeout = 30_000
@@ -17,12 +20,17 @@ class Session(
 
     override fun run() {
         socket.use { _ ->
-            reader.forEachLine {
-                if (it.startsWith("PING")) {
-                    writer.write("+PONG\r\n")
-                    writer.flush()
-                }
+            val commandParser = RedisCommandParser(reader)
+            val commandDispatcher = CommandDispatcher()
+            val dataStore = RedisDataStore()
+
+            while (true) {
+                val parsed = commandParser.parse()
+                val result = commandDispatcher.dispatch(parsed, dataStore)
+                writer.write(result.encodeValue())
+                writer.flush()
             }
         }
     }
 }
+
