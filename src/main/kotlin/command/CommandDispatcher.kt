@@ -14,6 +14,8 @@ class CommandDispatcher {
         val redisCommand = when (commandName.value.uppercase()) {
             "ECHO" -> RedisCommand.EchoCommand
             "PING" -> RedisCommand.PingCommand
+            "GET" -> RedisCommand.GetCommand
+            "SET" -> RedisCommand.SetCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

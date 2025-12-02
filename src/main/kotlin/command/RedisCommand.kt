@@ -26,5 +26,41 @@ sealed class RedisCommand {
             return RedisValue.SimpleString("PONG")
         }
     }
+
+    object GetCommand : RedisCommand() {
+
+        override fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue {
+            val key = arguments.first()
+            if (key !is RedisValue.BulkString) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            return store.get(key.value)?.let { RedisValue.BulkString(it) }
+                ?: RedisValue.NullBulkString
+        }
+    }
+
+    object SetCommand : RedisCommand() {
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            if (arguments.size < 2) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val key = arguments.first()
+            val value = arguments[1]
+
+            if (key !is RedisValue.BulkString || value !is RedisValue.BulkString) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            store.set(key.value, value.value)
+
+            return RedisValue.SimpleString("OK")
+        }
+    }
 }
 
