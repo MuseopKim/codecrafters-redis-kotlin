@@ -57,7 +57,34 @@ sealed class RedisCommand {
                 return RedisValue.Error("Invalid arguments.")
             }
 
-            store.set(key.value, value.value)
+            if (arguments.size == 2) {
+                store.set(key.value, value.value)
+                return RedisValue.SimpleString("OK")
+            }
+
+            if (arguments.size < 4) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val expiry = arguments[2]
+            if (expiry !is RedisValue.BulkString) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val seconds = arguments[3]
+            if (seconds !is RedisValue.BulkString) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val px = when (expiry.value.uppercase()) {
+                "PX" -> seconds.value.toLong()
+                "EX" -> seconds.value.toLong() * 1000
+                else -> null
+            }
+
+            px ?: return RedisValue.Error("Invalid arguments.")
+
+            store.set(key.value, value.value, px)
 
             return RedisValue.SimpleString("OK")
         }
