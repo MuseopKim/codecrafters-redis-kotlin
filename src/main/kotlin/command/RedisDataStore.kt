@@ -15,7 +15,7 @@ class RedisDataStore {
 
         val entry = strings[key] ?: return null
 
-        if (entry.expiresAt?.let { it < currentTime} == true) {
+        if (entry.isExpired(currentTime)) {
             strings.remove(key)
             return null
         }
@@ -26,6 +26,9 @@ class RedisDataStore {
     data class Entry(
         val value: String,
         val expiresAt: Long? = null
-    )
+    ) {
+        fun isExpired(currentTimestamp: Long): Boolean =
+            expiresAt != null && expiresAt <= currentTimestamp
+    }
 }
 

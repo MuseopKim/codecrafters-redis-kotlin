@@ -7,13 +7,10 @@ sealed class RedisCommand {
     object EchoCommand : RedisCommand() {
 
         override fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue {
-            val argument = arguments.first()
+            val argument = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
 
-            if (argument is RedisValue.BulkString) {
-                return RedisValue.BulkString(argument.value)
-            }
-
-            return RedisValue.Error("Invalid arguments.")
+            return argument
         }
     }
 
@@ -30,10 +27,8 @@ sealed class RedisCommand {
     object GetCommand : RedisCommand() {
 
         override fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue {
-            val key = arguments.first()
-            if (key !is RedisValue.BulkString) {
-                return RedisValue.Error("Invalid arguments.")
-            }
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
 
             return store.get(key.value)?.let { RedisValue.BulkString(it) }
                 ?: RedisValue.NullBulkString
@@ -46,39 +41,27 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            if (arguments.size < 2) {
-                return RedisValue.Error("Invalid arguments.")
-            }
 
-            val key = arguments.first()
-            val value = arguments[1]
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
 
-            if (key !is RedisValue.BulkString || value !is RedisValue.BulkString) {
-                return RedisValue.Error("Invalid arguments.")
-            }
+            val value = arguments.getBulkString(1)
+                ?: return RedisValue.Error("Invalid arguments.")
 
             if (arguments.size == 2) {
                 store.set(key.value, value.value)
                 return RedisValue.SimpleString("OK")
             }
 
-            if (arguments.size < 4) {
-                return RedisValue.Error("Invalid arguments.")
-            }
+            val expiry = arguments.getBulkString(2)
+                ?: return RedisValue.Error("Invalid arguments.")
 
-            val expiry = arguments[2]
-            if (expiry !is RedisValue.BulkString) {
-                return RedisValue.Error("Invalid arguments.")
-            }
-
-            val seconds = arguments[3]
-            if (seconds !is RedisValue.BulkString) {
-                return RedisValue.Error("Invalid arguments.")
-            }
+            val timestamp = arguments.getBulkString(3)
+                ?: return RedisValue.Error("Invalid arguments.")
 
             val px = when (expiry.value.uppercase()) {
-                "PX" -> seconds.value.toLong()
-                "EX" -> seconds.value.toLong() * 1000
+                "PX" -> timestamp.value.toLong()
+                "EX" -> timestamp.value.toLong() * 1000
                 else -> null
             }
 

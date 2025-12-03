@@ -38,3 +38,6 @@ sealed class RedisValue {
         }
     }
 }
+
+fun List<RedisValue>.getBulkString(index: Int): RedisValue.BulkString? =
+    getOrNull(index) as? RedisValue.BulkString
