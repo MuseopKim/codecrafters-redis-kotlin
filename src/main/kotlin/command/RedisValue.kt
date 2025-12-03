@@ -22,6 +22,10 @@ sealed class RedisValue {
         override fun encodeValue(): String = "$-1\r\n"
     }
 
+    class Integer(val value: Int): RedisValue() {
+        override fun encodeValue(): String = ":$value\r\n"
+    }
+
     class Array(val elements: List<RedisValue>) : RedisValue() {
 
         override fun encodeValue(): String {

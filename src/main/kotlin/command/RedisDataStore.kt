@@ -3,6 +3,7 @@ package command
 class RedisDataStore {
 
     private val strings = mutableMapOf<String, Entry>()
+    private val lists = mutableMapOf<String, MutableList<String>>()
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
@@ -21,6 +22,13 @@ class RedisDataStore {
         }
 
         return entry.value
+    }
+
+    fun rpush(key: String, value: String): Int {
+        val list = lists.getOrPut(key) { mutableListOf() }
+        list.add(value)
+
+        return list.size
     }
 
     data class Entry(
