@@ -17,6 +17,7 @@ class CommandDispatcher {
             "GET" -> RedisCommand.GetCommand
             "SET" -> RedisCommand.SetCommand
             "RPUSH" -> RedisCommand.RPUSHCommand
+            "LRANGE" -> RedisCommand.LRANGECommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

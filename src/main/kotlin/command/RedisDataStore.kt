@@ -1,5 +1,7 @@
 package command
 
+import kotlin.math.min
+
 class RedisDataStore {
 
     private val strings = mutableMapOf<String, Entry>()
@@ -29,6 +31,21 @@ class RedisDataStore {
         list.addAll(values)
 
         return list.size
+    }
+
+    fun lrange(key: String, start: Int, stop: Int): List<String> {
+        val list = lists[key] ?: return emptyList()
+        val length = list.size
+
+        if (start > stop) {
+            return emptyList()
+        }
+
+        if (start >= length) {
+            return emptyList()
+        }
+
+        return list.subList(start, min(stop, length - 1) + 1)
     }
 
     data class Entry(

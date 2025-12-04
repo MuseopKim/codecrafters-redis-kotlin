@@ -31,7 +31,7 @@ sealed class RedisValue {
         override fun encodeValue(): String {
             val arrayLength = elements.size
 
-            return "${arrayLength}\r\n${elements.joinToString { it.encodeValue() }}"
+            return "*${arrayLength}\r\n${elements.joinToString("") { it.encodeValue() }}"
         }
     }
 
@@ -48,5 +48,8 @@ fun List<RedisValue>.getBulkString(index: Int): RedisValue.BulkString? =
 
 fun List<RedisValue>.getBulkStrings(skip: Int = 0): List<RedisValue.BulkString> =
     drop(skip).filterIsInstance<RedisValue.BulkString>()
+
+fun List<RedisValue>.getInteger(index: Int): RedisValue.Integer? =
+    getOrNull(index) as? RedisValue.Integer
 
 

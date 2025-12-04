@@ -91,5 +91,25 @@ sealed class RedisCommand {
             return RedisValue.Integer(sizeOfList)
         }
     }
+
+    object LRANGECommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val start = arguments.getBulkString(1)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val end = arguments.getBulkString(2)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val subList = store.lrange(key.value, start.value.toInt(), end.value.toInt())
+
+            return RedisValue.Array(subList.map { RedisValue.BulkString(it) })
+        }
+    }
 }
 
