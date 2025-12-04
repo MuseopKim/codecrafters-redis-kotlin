@@ -24,9 +24,9 @@ class RedisDataStore {
         return entry.value
     }
 
-    fun rpush(key: String, value: String): Int {
+    fun rpush(key: String, values: List<String>): Int {
         val list = lists.getOrPut(key) { mutableListOf() }
-        list.add(value)
+        list.addAll(values)
 
         return list.size
     }

@@ -72,7 +72,7 @@ sealed class RedisCommand {
             return RedisValue.SimpleString("OK")
         }
     }
-    
+
     object RPUSHCommand : RedisCommand() {
         override fun execute(
             arguments: List<RedisValue>,
@@ -80,11 +80,13 @@ sealed class RedisCommand {
         ): RedisValue {
             val key = (arguments.getBulkString(0)
                 ?: return RedisValue.Error("Invalid arguments."))
-            
-            val element = arguments.getBulkString(1)
-                ?: return RedisValue.Error("Invalid arguments.")
 
-            val sizeOfList = store.rpush(key.value, element.value)
+            val elements = arguments.getBulkStrings(1)
+            if (elements.isEmpty()) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val sizeOfList = store.rpush(key.value, elements.map { it.value })
 
             return RedisValue.Integer(sizeOfList)
         }

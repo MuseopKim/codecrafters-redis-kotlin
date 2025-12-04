@@ -22,7 +22,7 @@ sealed class RedisValue {
         override fun encodeValue(): String = "$-1\r\n"
     }
 
-    class Integer(val value: Int): RedisValue() {
+    class Integer(val value: Int) : RedisValue() {
         override fun encodeValue(): String = ":$value\r\n"
     }
 
@@ -45,3 +45,10 @@ sealed class RedisValue {
 
 fun List<RedisValue>.getBulkString(index: Int): RedisValue.BulkString? =
     getOrNull(index) as? RedisValue.BulkString
+
+fun List<RedisValue>.getBulkStrings(skip: Int = 0): List<RedisValue.BulkString> =
+    drop(skip)
+        .filter { it is RedisValue.BulkString }
+        .map { it as RedisValue.BulkString }
+
+
