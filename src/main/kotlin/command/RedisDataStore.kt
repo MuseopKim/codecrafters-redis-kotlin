@@ -1,5 +1,6 @@
 package command
 
+import kotlin.math.max
 import kotlin.math.min
 
 class RedisDataStore {
@@ -37,15 +38,27 @@ class RedisDataStore {
         val list = lists[key] ?: return emptyList()
         val length = list.size
 
-        if (start > stop) {
+        val normalizedStart = if (start < 0) {
+            max(0, start + length)
+        } else {
+            start
+        }
+
+        val normalizedStop = if (stop < 0) {
+            max(0, stop + length)
+        } else {
+            stop
+        }
+
+        if (normalizedStart > normalizedStop) {
             return emptyList()
         }
 
-        if (start >= length) {
+        if (normalizedStart >= length) {
             return emptyList()
         }
 
-        return list.subList(start, min(stop, length - 1) + 1)
+        return list.subList(normalizedStart, min(normalizedStop, length - 1) + 1)
     }
 
     data class Entry(
