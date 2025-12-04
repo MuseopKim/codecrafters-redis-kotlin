@@ -47,8 +47,6 @@ fun List<RedisValue>.getBulkString(index: Int): RedisValue.BulkString? =
     getOrNull(index) as? RedisValue.BulkString
 
 fun List<RedisValue>.getBulkStrings(skip: Int = 0): List<RedisValue.BulkString> =
-    drop(skip)
-        .filter { it is RedisValue.BulkString }
-        .map { it as RedisValue.BulkString }
+    drop(skip).filterIsInstance<RedisValue.BulkString>()
 
 
