@@ -6,7 +6,7 @@ import kotlin.math.min
 class RedisDataStore {
 
     private val strings = mutableMapOf<String, Entry>()
-    private val lists = mutableMapOf<String, MutableList<String>>()
+    private val lists = mutableMapOf<String, ArrayDeque<String>>()
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
@@ -27,8 +27,15 @@ class RedisDataStore {
         return entry.value
     }
 
+    fun lpush(key: String, values: List<String>): Int {
+        val list = lists.getOrPut(key) { ArrayDeque() }
+        values.forEach { list.addFirst(it) }
+
+        return list.size
+    }
+
     fun rpush(key: String, values: List<String>): Int {
-        val list = lists.getOrPut(key) { mutableListOf() }
+        val list = lists.getOrPut(key) { ArrayDeque() }
         list.addAll(values)
 
         return list.size
