@@ -19,6 +19,7 @@ class CommandDispatcher {
             "RPUSH" -> RedisCommand.RPUSHCommand
             "LPUSH" -> RedisCommand.LPUSHCommand
             "LRANGE" -> RedisCommand.LRANGECommand
+            "LLEN" -> RedisCommand.LLENCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

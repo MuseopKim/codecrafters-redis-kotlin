@@ -130,5 +130,17 @@ sealed class RedisCommand {
             return RedisValue.Array(subList.map { RedisValue.BulkString(it) })
         }
     }
+
+    object LLENCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            return RedisValue.Integer(store.llen(key.value))
+        }
+    }
 }
 

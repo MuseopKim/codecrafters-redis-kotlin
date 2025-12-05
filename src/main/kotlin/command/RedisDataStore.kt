@@ -68,6 +68,10 @@ class RedisDataStore {
         return list.subList(normalizedStart, min(normalizedStop, length - 1) + 1)
     }
 
+    fun llen(key: String): Int {
+        return lists[key]?.size ?: 0
+    }
+
     data class Entry(
         val value: String,
         val expiresAt: Long? = null
