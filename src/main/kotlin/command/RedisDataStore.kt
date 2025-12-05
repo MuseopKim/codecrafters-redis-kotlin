@@ -72,6 +72,12 @@ class RedisDataStore {
         return lists[key]?.size ?: 0
     }
 
+    fun lpop(key: String): String? {
+        val list = lists[key]
+
+        return list?.removeFirstOrNull()
+    }
+
     data class Entry(
         val value: String,
         val expiresAt: Long? = null

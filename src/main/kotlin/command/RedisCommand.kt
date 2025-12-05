@@ -142,5 +142,20 @@ sealed class RedisCommand {
             return RedisValue.Integer(store.llen(key.value))
         }
     }
+
+    object LPOPCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val removed = store.lpop(key.value)
+
+            return removed?.let { RedisValue.BulkString(it) }
+                ?: RedisValue.NullBulkString
+        }
+    }
 }
 
