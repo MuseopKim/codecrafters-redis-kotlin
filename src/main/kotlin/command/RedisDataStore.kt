@@ -72,10 +72,22 @@ class RedisDataStore {
         return lists[key]?.size ?: 0
     }
 
-    fun lpop(key: String): String? {
+    fun lpop(key: String, count: Int?): List<String> {
         val list = lists[key]
+        if (list.isNullOrEmpty()) {
+            return emptyList()
+        }
 
-        return list?.removeFirstOrNull()
+        val length = list.size
+        val normalizedCount = min(length, count ?: 1)
+
+        val removedElements = mutableListOf<String>()
+        for (i in 0 until normalizedCount) {
+            val removed = list.removeFirst()
+            removedElements.add(removed)
+        }
+
+        return removedElements
     }
 
     data class Entry(

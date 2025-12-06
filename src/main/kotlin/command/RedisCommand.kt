@@ -151,10 +151,17 @@ sealed class RedisCommand {
             val key = arguments.getBulkString(0)
                 ?: return RedisValue.Error("Invalid arguments.")
 
-            val removed = store.lpop(key.value)
+            val count = arguments.getBulkString(1)
 
-            return removed?.let { RedisValue.BulkString(it) }
-                ?: RedisValue.NullBulkString
+            val removedElements = store.lpop(key.value, count?.value?.toInt())
+
+            if (count == null) {
+                return removedElements.takeIf { it.isNotEmpty() }
+                    ?.let { RedisValue.BulkString(it.first()) }
+                    ?: RedisValue.NullBulkString
+            }
+
+            return RedisValue.Array(removedElements.map { RedisValue.BulkString(it) })
         }
     }
 }
