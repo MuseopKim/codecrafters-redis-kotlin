@@ -1,5 +1,8 @@
 package command
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+
 sealed class RedisCommand {
 
     abstract fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue
@@ -176,14 +179,27 @@ sealed class RedisCommand {
             val timeout = arguments.getBulkString(1)
                 ?: return RedisValue.Error("Invalid arguments.")
 
-            val future = store.blpop(key.value, timeout.value.toLong())
-            val result = future.get()
+            val future = store.blpop(key.value, (timeout.value.toDouble() * 1000).toLong())
 
-            return RedisValue.Array(listOf(
-                key,
-                RedisValue.BulkString(result)
-            ))
+            try {
+                val timeoutSeconds = if (timeout.value.toDouble() == 0.0) {
+                    Double.MAX_VALUE
+                } else {
+                    timeout.value.toDouble()
+                }
+
+                val result =
+                    future.get((timeoutSeconds * 1000).toLong(), TimeUnit.MILLISECONDS)
+
+                return RedisValue.Array(
+                    listOf(
+                        key,
+                        RedisValue.BulkString(result)
+                    )
+                )
+            } catch (e: TimeoutException) {
+                return RedisValue.NullArray()
+            }
         }
     }
 }
-

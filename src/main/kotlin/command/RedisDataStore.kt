@@ -43,6 +43,7 @@ class RedisDataStore {
         return atomic {
             val list = lists.getOrPut(key) { ArrayDeque() }
             list.addAll(values)
+            val sizeAfterAdded = list.size
 
             val clients = waitingClients[key]
             while (!clients.isNullOrEmpty() && list.isNotEmpty()) {
@@ -51,7 +52,7 @@ class RedisDataStore {
                 client.complete(value)
             }
 
-            list.size
+            sizeAfterAdded
         }
     }
 

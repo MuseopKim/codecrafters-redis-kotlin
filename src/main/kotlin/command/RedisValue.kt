@@ -35,6 +35,13 @@ sealed class RedisValue {
         }
     }
 
+    class NullArray() : RedisValue() {
+
+        override fun encodeValue(): String {
+            return "*-1\r\n"
+        }
+    }
+
     class Error(val message: String) : RedisValue() {
 
         override fun encodeValue(): String {
