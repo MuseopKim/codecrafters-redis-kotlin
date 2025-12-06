@@ -164,5 +164,26 @@ sealed class RedisCommand {
             return RedisValue.Array(removedElements.map { RedisValue.BulkString(it) })
         }
     }
+
+    object BLPOPCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val timeout = arguments.getBulkString(1)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val future = store.blpop(key.value, timeout.value.toLong())
+            val result = future.get()
+
+            return RedisValue.Array(listOf(
+                key,
+                RedisValue.BulkString(result)
+            ))
+        }
+    }
 }
 

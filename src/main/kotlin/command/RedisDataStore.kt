@@ -1,12 +1,17 @@
 package command
 
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.max
 import kotlin.math.min
 
 class RedisDataStore {
 
+    private val lock = ReentrantLock()
+
     private val strings = mutableMapOf<String, Entry>()
     private val lists = mutableMapOf<String, ArrayDeque<String>>()
+    private val waitingClients = mutableMapOf<String, ArrayDeque<CompletableFuture<String>>>()
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
@@ -35,10 +40,19 @@ class RedisDataStore {
     }
 
     fun rpush(key: String, values: List<String>): Int {
-        val list = lists.getOrPut(key) { ArrayDeque() }
-        list.addAll(values)
+        return atomic {
+            val list = lists.getOrPut(key) { ArrayDeque() }
+            list.addAll(values)
 
-        return list.size
+            val clients = waitingClients[key]
+            while (!clients.isNullOrEmpty() && list.isNotEmpty()) {
+                val client = clients.removeFirst()
+                val value = list.removeFirst()
+                client.complete(value)
+            }
+
+            list.size
+        }
     }
 
     fun lrange(key: String, start: Int, stop: Int): List<String> {
@@ -81,7 +95,31 @@ class RedisDataStore {
         val length = list.size
         val normalizedCount = min(length, count ?: 1)
 
-        return List(normalizedCount) { list.removeFirst()}
+        return List(normalizedCount) { list.removeFirst() }
+    }
+
+    fun blpop(key: String, timeoutSeconds: Long): CompletableFuture<String> {
+        return atomic {
+            val list = lists[key]
+            if (!list.isNullOrEmpty()) {
+                return@atomic CompletableFuture.completedFuture(list.removeFirst())
+            }
+
+            val future = CompletableFuture<String>()
+            val clients = waitingClients.getOrPut(key) { ArrayDeque() }
+            clients.add(future)
+
+            future
+        }
+    }
+
+    fun <R> atomic(operation: () -> R): R {
+        lock.lock()
+        return try {
+            operation()
+        } finally {
+            lock.unlock()
+        }
     }
 
     data class Entry(

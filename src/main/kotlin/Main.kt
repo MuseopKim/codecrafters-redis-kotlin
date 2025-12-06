@@ -1,3 +1,4 @@
+import command.RedisDataStore
 import java.net.ServerSocket
 
 fun main(args: Array<String>) {
@@ -6,10 +7,12 @@ fun main(args: Array<String>) {
     // ensures that we don't run into 'Address already in use' errors
     serverSocket.reuseAddress = true
 
+    val dataStore = RedisDataStore()
+
     while (true) {
         val clientSocket = serverSocket.accept()
 
-        val thread = Thread(Session(clientSocket))
+        val thread = Thread(Session(clientSocket, dataStore))
         thread.start()
     }
 }

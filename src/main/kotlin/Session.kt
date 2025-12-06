@@ -6,7 +6,8 @@ import java.io.BufferedWriter
 import java.net.Socket
 
 class Session(
-    private val socket: Socket
+    private val socket: Socket,
+    private val dataStore: RedisDataStore
 ) : Runnable {
 
     private val reader: BufferedReader
@@ -22,7 +23,6 @@ class Session(
         socket.use { _ ->
             val commandParser = RedisCommandParser(reader)
             val commandDispatcher = CommandDispatcher()
-            val dataStore = RedisDataStore()
 
             while (true) {
                 val parsed = commandParser.parse()
