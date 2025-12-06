@@ -81,13 +81,7 @@ class RedisDataStore {
         val length = list.size
         val normalizedCount = min(length, count ?: 1)
 
-        val removedElements = mutableListOf<String>()
-        for (i in 0 until normalizedCount) {
-            val removed = list.removeFirst()
-            removedElements.add(removed)
-        }
-
-        return removedElements
+        return List(normalizedCount) { list.removeFirst()}
     }
 
     data class Entry(

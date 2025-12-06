@@ -156,8 +156,8 @@ sealed class RedisCommand {
             val removedElements = store.lpop(key.value, count?.value?.toInt())
 
             if (count == null) {
-                return removedElements.takeIf { it.isNotEmpty() }
-                    ?.let { RedisValue.BulkString(it.first()) }
+                return removedElements.firstOrNull()
+                    ?.let { RedisValue.BulkString(it) }
                     ?: RedisValue.NullBulkString
             }
 
