@@ -1,6 +1,8 @@
 package command
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.max
 import kotlin.math.min
@@ -11,7 +13,7 @@ class RedisDataStore {
 
     private val strings = mutableMapOf<String, Entry>()
     private val lists = mutableMapOf<String, ArrayDeque<String>>()
-    private val waitingClients = mutableMapOf<String, ArrayDeque<CompletableFuture<String>>>()
+    private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
@@ -40,19 +42,16 @@ class RedisDataStore {
     }
 
     fun rpush(key: String, values: List<String>): Int {
-        return atomic {
+        lock.lock()
+        try {
             val list = lists.getOrPut(key) { ArrayDeque() }
             list.addAll(values)
-            val sizeAfterAdded = list.size
 
-            val clients = waitingClients[key]
-            while (!clients.isNullOrEmpty() && list.isNotEmpty()) {
-                val client = clients.removeFirst()
-                val value = list.removeFirst()
-                client.complete(value)
-            }
+            lockConditions[key]?.signalAll()
 
-            sizeAfterAdded
+            return list.size
+        } finally {
+            lock.unlock()
         }
     }
 
@@ -99,18 +98,32 @@ class RedisDataStore {
         return List(normalizedCount) { list.removeFirst() }
     }
 
-    fun blpop(key: String, timeoutSeconds: Long): CompletableFuture<String> {
-        return atomic {
-            val list = lists[key]
-            if (!list.isNullOrEmpty()) {
-                return@atomic CompletableFuture.completedFuture(list.removeFirst())
+    fun blpop(key: String, timeoutMilliSeconds: Long): String? {
+        lock.lock()
+        try {
+            val list = lists.getOrPut(key) { ArrayDeque() }
+            val condition = lockConditions.getOrPut(key) { lock.newCondition() }
+            val timeoutNano = TimeUnit.MILLISECONDS.toNanos(timeoutMilliSeconds)
+            val deadLineNano = System.nanoTime() + timeoutNano
+
+            while (list.isEmpty()) {
+                val remainingNano = deadLineNano - System.nanoTime()
+                if (timeoutMilliSeconds == 0L) {
+                    condition.await()
+                    continue
+                }
+
+                if (remainingNano <= 0) {
+                    return null
+                }
+
+                condition.awaitNanos(remainingNano)
+
             }
 
-            val future = CompletableFuture<String>()
-            val clients = waitingClients.getOrPut(key) { ArrayDeque() }
-            clients.add(future)
-
-            future
+            return list.removeFirst()
+        } finally {
+            lock.unlock()
         }
     }
 

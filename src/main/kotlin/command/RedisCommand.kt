@@ -173,30 +173,23 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            val key = arguments.getBulkString(0)
-                ?: return RedisValue.Error("Invalid arguments.")
-
-            val timeout = arguments.getBulkString(1)
-                ?: return RedisValue.Error("Invalid arguments.")
-
-            val future = store.blpop(key.value, (timeout.value.toDouble() * 1000).toLong())
-
             try {
-                val timeoutSeconds = if (timeout.value.toDouble() == 0.0) {
-                    Double.MAX_VALUE
-                } else {
-                    timeout.value.toDouble()
-                }
+                val key = arguments.getBulkString(0)
+                    ?: return RedisValue.Error("Invalid arguments.")
 
-                val result =
-                    future.get((timeoutSeconds * 1000).toLong(), TimeUnit.MILLISECONDS)
+                val timeout = arguments.getBulkString(1)
+                    ?: return RedisValue.Error("Invalid arguments.")
 
-                return RedisValue.Array(
-                    listOf(
-                        key,
-                        RedisValue.BulkString(result)
+                val result = store.blpop(key.value, (timeout.value.toDouble() * 1000).toLong())
+
+                return result?.let {
+                    RedisValue.Array(
+                        listOf(
+                            key,
+                            RedisValue.BulkString(it)
+                        )
                     )
-                )
+                } ?: RedisValue.NullArray()
             } catch (e: TimeoutException) {
                 return RedisValue.NullArray()
             }
