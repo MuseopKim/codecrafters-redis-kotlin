@@ -12,7 +12,7 @@ class RedisDataStore {
 
     private val strings = mutableMapOf<String, StringEntry>()
     private val lists = mutableMapOf<String, ArrayDeque<String>>()
-    private val streams = mutableMapOf<String, MutableMap<String, StreamEntry>>()
+    private val streams = mutableMapOf<String, LinkedHashMap<String, StreamEntry>>()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
@@ -139,10 +139,18 @@ class RedisDataStore {
     }
 
     fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): String {
-        val stream = streams.getOrPut(key) { mutableMapOf() }
+        val stream = streams.getOrPut(key) { linkedMapOf() }
         val entry = stream.getOrPut(id) { StreamEntry(id, keyPairs) }
 
         return entry.id
+    }
+
+    fun getStreamEntry(key: String, id: String): StreamEntry? {
+        return streams[key]?.let { stream -> stream[id] }
+    }
+
+    fun getStreamLastEntry(key: String): StreamEntry? {
+        return streams[key]?.lastEntry()?.value
     }
 
     fun <R> atomic(operation: () -> R): R {

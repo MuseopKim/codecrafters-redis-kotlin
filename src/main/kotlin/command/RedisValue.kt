@@ -42,10 +42,10 @@ sealed class RedisValue {
         }
     }
 
-    class Error(val message: String) : RedisValue() {
+    class SimpleErrors(val message: String) : RedisValue() {
 
         override fun encodeValue(): String {
-            return message
+            return "-${message}\r\n"
         }
     }
 }
