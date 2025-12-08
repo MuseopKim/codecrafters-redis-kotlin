@@ -10,14 +10,15 @@ class RedisDataStore {
 
     private val lock = ReentrantLock()
 
-    private val strings = mutableMapOf<String, Entry>()
+    private val strings = mutableMapOf<String, StringEntry>()
     private val lists = mutableMapOf<String, ArrayDeque<String>>()
+    private val streams = mutableMapOf<String, MutableMap<String, StreamEntry>>()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
 
-        strings[key] = Entry(value, expiresAt)
+        strings[key] = StringEntry(value, expiresAt)
     }
 
     fun get(key: String): String? {
@@ -125,14 +126,23 @@ class RedisDataStore {
             lock.unlock()
         }
     }
+
     fun type(key: String): String {
         val type = when (key) {
             in strings -> RedisDataType.STRING
             in lists -> RedisDataType.LIST
+            in streams -> RedisDataType.STREAM
             else -> RedisDataType.NONE
         }
 
         return type.typeName
+    }
+
+    fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): String {
+        val stream = streams.getOrPut(key) { mutableMapOf() }
+        val entry = stream.getOrPut(id) { StreamEntry(id, keyPairs) }
+
+        return entry.id
     }
 
     fun <R> atomic(operation: () -> R): R {
@@ -144,11 +154,16 @@ class RedisDataStore {
         }
     }
 
-    data class Entry(
+    data class StringEntry(
         val value: String,
         val expiresAt: Long? = null
     ) {
         fun isExpired(currentTimestamp: Long): Boolean =
             expiresAt != null && expiresAt <= currentTimestamp
     }
+
+    data class StreamEntry(
+        val id: String,
+        val keyPairs: List<Pair<String, String>>
+    )
 }

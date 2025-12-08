@@ -1,6 +1,6 @@
 package command
 
-import java.util.concurrent.TimeUnit
+import command.RedisDataStore.StreamEntry
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
@@ -207,6 +207,40 @@ sealed class RedisCommand {
             val dataType = store.type(key.value)
 
             return RedisValue.SimpleString(dataType)
+        }
+    }
+
+    object XADDCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val id = arguments.getBulkString(1)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val keyValues = arguments.getBulkStrings(2)
+
+            if (keyValues.isEmpty()) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            if (keyValues.size % 2 != 0) {
+                return RedisValue.Error("Invalid arguments.")
+            }
+
+            val keyPairs = keyValues.chunked(2)
+                .map { it[0].value to it[1].value }
+
+            store.xadd(
+                key.value,
+                id.value,
+                keyPairs
+            )
+
+            return RedisValue.BulkString(id.value)
         }
     }
 }
