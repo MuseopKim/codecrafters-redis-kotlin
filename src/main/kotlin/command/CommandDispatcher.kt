@@ -22,6 +22,7 @@ class CommandDispatcher {
             "LLEN" -> RedisCommand.LLENCommand
             "LPOP" -> RedisCommand.LPOPCommand
             "BLPOP" -> RedisCommand.BLPOPCommand
+            "TYPE" -> RedisCommand.TYPECommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

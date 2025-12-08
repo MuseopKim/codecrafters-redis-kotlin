@@ -1,6 +1,5 @@
 package command
 
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
@@ -126,6 +125,15 @@ class RedisDataStore {
             lock.unlock()
         }
     }
+    fun type(key: String): String {
+        val type = when (key) {
+            in strings -> RedisDataType.STRING
+            in lists -> RedisDataType.LIST
+            else -> RedisDataType.NONE
+        }
+
+        return type.typeName
+    }
 
     fun <R> atomic(operation: () -> R): R {
         lock.lock()
@@ -144,4 +152,3 @@ class RedisDataStore {
             expiresAt != null && expiresAt <= currentTimestamp
     }
 }
-

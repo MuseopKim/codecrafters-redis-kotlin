@@ -195,4 +195,18 @@ sealed class RedisCommand {
             }
         }
     }
+
+    object TYPECommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.Error("Invalid arguments.")
+
+            val dataType = store.type(key.value)
+
+            return RedisValue.SimpleString(dataType)
+        }
+    }
 }
