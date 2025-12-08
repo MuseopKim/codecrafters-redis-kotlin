@@ -257,24 +257,23 @@ sealed class RedisCommand {
                 return RedisValue.SimpleErrors("ERR The ID specified in XADD must be greater than 0-0")
             }
 
-            val entry = store.getStreamEntry(key.value, id.value)
-            if (entry != null) {
-                return RedisValue.SimpleErrors("ERR The ID specified in XADD is equal or smaller than the target stream top item")
-            }
-
-            val parsedId =
-                parseId(id.value) ?: return RedisValue.SimpleErrors("Invalid ID specified in XADD")
             val lastEntry = store.getStreamLastEntry(key.value)
             if (lastEntry == null) {
                 return id
             }
 
+            val parsedId =
+                parseId(id.value) ?: return RedisValue.SimpleErrors("Invalid ID specified in XADD")
+
             val lastEntryId = parseId(lastEntry.id)!!
-            if (lastEntryId.first > parsedId.first) {
+
+            val (lastTime, lastSequence) = lastEntryId
+            val (newTime, newSequence) = parsedId
+            if (lastTime.toLong() > newTime.toLong()) {
                 return RedisValue.SimpleErrors("ERR The ID specified in XADD is equal or smaller than the target stream top item")
             }
 
-            if (lastEntryId.second > parsedId.second) {
+            if (lastTime.toLong() == newTime.toLong() && lastSequence.toLong() >= newSequence.toLong()) {
                 return RedisValue.SimpleErrors("ERR The ID specified in XADD is equal or smaller than the target stream top item")
             }
 
