@@ -214,16 +214,13 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
+            val streams = store.streams
+
             val key = arguments.getBulkString(0)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
             val id = arguments.getBulkString(1)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
-
-            val validatedId = validatedId(key, id, store)
-            if (validatedId is RedisValue.SimpleErrors) {
-                return validatedId
-            }
 
             val keyValues = arguments.getBulkStrings(2)
 
@@ -238,58 +235,23 @@ sealed class RedisCommand {
             val keyPairs = keyValues.chunked(2)
                 .map { it[0].value to it[1].value }
 
-            store.xadd(
-                key.value,
-                (validatedId as RedisValue.BulkString).value,
-                keyPairs
-            )
+            val streamIdGeneration = streams.generateId(key.value, id.value)
 
-            return RedisValue.BulkString(id.value)
-        }
+            return when (streamIdGeneration) {
+                is RedisDataStore.Streams.StreamIdGeneration.Success -> {
+                    val addedId = streams.xadd(
+                        key.value,
+                        streamIdGeneration.id.toString(),
+                        keyPairs,
+                    )
 
-        fun validatedId(
-            key: RedisValue.BulkString,
-            id: RedisValue.BulkString,
-            store: RedisDataStore
-        ): RedisValue {
-            val value = id.value
-            if (value == "0-0") {
-                return RedisValue.SimpleErrors("ERR The ID specified in XADD must be greater than 0-0")
+                    return RedisValue.BulkString(addedId)
+                }
+
+                is RedisDataStore.Streams.StreamIdGeneration.Error -> RedisValue.SimpleErrors(
+                    streamIdGeneration.message
+                )
             }
-
-            val lastEntry = store.getStreamLastEntry(key.value)
-            if (lastEntry == null) {
-                return id
-            }
-
-            val parsedId =
-                parseId(id.value) ?: return RedisValue.SimpleErrors("Invalid ID specified in XADD")
-
-            val lastEntryId = parseId(lastEntry.id)!!
-
-            val (lastTime, lastSequence) = lastEntryId
-            val (newTime, newSequence) = parsedId
-            if (lastTime.toLong() > newTime.toLong()) {
-                return RedisValue.SimpleErrors("ERR The ID specified in XADD is equal or smaller than the target stream top item")
-            }
-
-            if (lastTime.toLong() == newTime.toLong() && lastSequence.toLong() >= newSequence.toLong()) {
-                return RedisValue.SimpleErrors("ERR The ID specified in XADD is equal or smaller than the target stream top item")
-            }
-
-            return id
-        }
-
-        fun parseId(id: String): Pair<String, String>? {
-            val parts = id.split("-")
-            if (parts.size != 2) {
-                return null
-            }
-
-            val millisecondsTime = parts.first()
-            val sequenceNumber = parts.last()
-
-            return Pair(millisecondsTime, sequenceNumber)
         }
     }
 }
