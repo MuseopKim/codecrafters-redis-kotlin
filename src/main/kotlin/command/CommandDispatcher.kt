@@ -24,6 +24,7 @@ class CommandDispatcher {
             "BLPOP" -> RedisCommand.BLPOPCommand
             "TYPE" -> RedisCommand.TYPECommand
             "XADD" -> RedisCommand.XADDCommand
+            "XRANGE" -> RedisCommand.XRANGECommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 
