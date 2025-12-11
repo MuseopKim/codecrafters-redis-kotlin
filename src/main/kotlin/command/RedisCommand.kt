@@ -245,7 +245,7 @@ sealed class RedisCommand {
                         keyPairs,
                     )
 
-                    return RedisValue.BulkString(addedId)
+                    RedisValue.BulkString(addedId)
                 }
 
                 is RedisDataStore.Streams.StreamIdGeneration.Error -> RedisValue.SimpleErrors(
