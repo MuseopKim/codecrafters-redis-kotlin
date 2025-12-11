@@ -172,78 +172,31 @@ class RedisDataStore {
         }
 
         fun xrange(key: String, start: String, end: String): List<StreamEntry> {
-            if (key !in entries) {
-                return emptyList()
+            val stream = entries[key] ?: return emptyList()
+
+            val startId = parseRangeId(start, 0L)
+            val endId = parseRangeId(end, Long.MAX_VALUE)
+
+            return stream.values.filter { entry ->
+                val entryId = StreamId.parse(entry.id)
+                startId <= entryId && entryId <= endId
             }
-
-            val idsInRange = idsInRange(key, start, end)
-            if (idsInRange.isEmpty()) {
-                return emptyList()
-            }
-
-            val stream = entries[key]!!
-
-            return idsInRange.map { stream[it]!! }
         }
 
-        private fun idsInRange(key: String, start: String, end: String): List<String> {
-            val idsInRange = mutableListOf<String>()
-            if (key !in entries) {
-                return idsInRange
+        private fun parseRangeId(id: String, defaultSequence: Long): StreamId {
+            if (id == "-") {
+                return StreamId(0L, 0L)
             }
 
-            val startId = parseId(key, start, 0L)
-            val endId = parseId(key, end, Long.MAX_VALUE)
-
-            val streamIds = ids[key]!!
-            val fromEntries = streamIds.entries
-                .dropWhile { it.key != startId.time }
-                .associate { it.key to it.value }
-
-            for (entry in fromEntries) {
-                val time = entry.key
-                val sequence = entry.value
-                if (time > endId.time) {
-                    break
-                }
-
-                if (time == endId.time && sequence.toLong() > endId.sequenceNumber) {
-                    break
-                }
-
-                val startSequence = when (time) {
-                    startId.time -> startId.sequenceNumber
-                    0L -> 1L
-                    else -> 0L
-                }
-
-                val endSequence = if (time == endId.time) {
-                    min(sequence.toLong(), endId.sequenceNumber)
-                } else {
-                    sequence.toLong()
-                }
-
-                for (i in startSequence..endSequence) {
-                    idsInRange.add("${time}-${i}")
-
-                }
+            if (id == "+") {
+                return StreamId(Long.MAX_VALUE, Long.MAX_VALUE)
             }
 
-            return idsInRange
-        }
-
-        private fun parseId(key: String, id: String, defaultSequence: Long): StreamId {
             if (!id.contains("-")) {
-                val streamIds = ids[key]!!
-                val maxSequence = streamIds[id.toLong()]!!
-                return StreamId(id.toLong(), min(maxSequence.toLong(), defaultSequence))
+                return StreamId(id.toLong(), defaultSequence)
             }
 
-            val parts = id.split("-")
-            val time = parts[0].toLong()
-            val sequence = parts[1].toLong()
-
-            return StreamId(time, sequence)
+            return StreamId.parse(id)
         }
 
         fun getEntry(key: String, id: String): StreamEntry? {
@@ -383,8 +336,36 @@ class RedisDataStore {
         data class StreamId(
             val time: Long,
             val sequenceNumber: Long
-        ) {
+        ) : Comparable<StreamId> {
             fun value(): String = "$time-$sequenceNumber"
+
+            override fun compareTo(other: StreamId): Int {
+                if (this.time > other.time) {
+                    return 1
+                }
+
+                if (this.time < other.time) {
+                    return -1
+                }
+
+                // this.time == other.time
+                if (this.sequenceNumber < other.sequenceNumber) {
+                    return -1
+                }
+
+                if (this.sequenceNumber > other.sequenceNumber) {
+                    return 1
+                }
+
+                return 0
+            }
+
+            companion object {
+                fun parse(id: String): StreamId {
+                    val parts = id.split("-")
+                    return StreamId(parts[0].toLong(), parts[1].toLong())
+                }
+            }
         }
 
         sealed class StreamIdGeneration {
