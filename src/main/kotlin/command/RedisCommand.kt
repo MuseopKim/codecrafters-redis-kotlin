@@ -219,8 +219,6 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            val streams = store.streams
-
             val key = arguments.getBulkString(0)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
@@ -240,17 +238,11 @@ sealed class RedisCommand {
             val keyPairs = keyValues.chunked(2)
                 .map { it[0].value to it[1].value }
 
-            val streamIdGeneration = streams.generateId(key.value, id.value)
+            val streamIdGeneration = store.xadd(key.value, id.value, keyPairs)
 
             return when (streamIdGeneration) {
                 is StreamIdGeneration.Success -> {
-                    val addedId = streams.xadd(
-                        key.value,
-                        streamIdGeneration.id.value(),
-                        keyPairs,
-                    )
-
-                    RedisValue.BulkString(addedId)
+                    RedisValue.BulkString(streamIdGeneration.id.value())
                 }
 
                 is StreamIdGeneration.Error -> RedisValue.SimpleErrors(
@@ -265,8 +257,6 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            val streams = store.streams
-
             val key = arguments.getBulkString(0)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
@@ -276,14 +266,12 @@ sealed class RedisCommand {
             val endId = arguments.getBulkString(2)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
-            val streamEntries = streams.xrange(key.value, startId.value, endId.value)
-
+            val streamEntries = store.xrange(key.value, startId.value, endId.value)
             if (streamEntries.isEmpty()) {
                 return RedisValue.NullArray()
             }
 
             val entriesAsArray = mutableListOf<RedisValue.Array>()
-
             for (entry in streamEntries) {
                 val id = entry.id
                 val keyPairs = entry.keyPairs

@@ -2,6 +2,7 @@ package store
 
 import protocol.RedisDataType
 import store.lists.Lists
+import store.streams.StreamIdGeneration
 import store.streams.Streams
 import store.strings.Strings
 import java.util.concurrent.TimeUnit
@@ -89,6 +90,23 @@ class RedisDataStore {
         return keyStores.firstOrNull { (store, _) -> key in store }
             ?.second?.typeName
             ?: RedisDataType.NONE.typeName
+    }
+
+    fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): StreamIdGeneration {
+        return when (val idGeneration = streams.generateId(key, id)) {
+            is StreamIdGeneration.Success -> {
+                streams.xadd(key, idGeneration.id.value(), keyPairs)
+                idGeneration
+            }
+
+            is StreamIdGeneration.Error -> {
+                idGeneration
+            }
+        }
+    }
+
+    fun xrange(key: String, start: String, end: String): List<Streams.Entry> {
+        return streams.xrange(key, start, end)
     }
 
     fun <R> atomic(operation: () -> R): R {
