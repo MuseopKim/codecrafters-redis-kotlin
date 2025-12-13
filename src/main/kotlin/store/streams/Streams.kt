@@ -2,18 +2,29 @@ package store.streams
 
 import protocol.RedisValue
 import store.KeyStore
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.Condition
+import java.util.concurrent.locks.ReentrantLock
 
 class Streams(
     private val sequenceTrackers: MutableMap<String, MutableMap<Long, AtomicLong>> = mutableMapOf(),
-    private val entries: LinkedHashMap<String, LinkedHashMap<String, Entry>> = linkedMapOf()
+    private val entries: LinkedHashMap<String, LinkedHashMap<String, Entry>> = linkedMapOf(),
+    private val lock: ReentrantLock = ReentrantLock(),
+    private val condition: Condition = lock.newCondition()
 ) : KeyStore {
 
     fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): String {
-        val stream = entries.getOrPut(key) { linkedMapOf() }
-        val entry = stream.getOrPut(id) { Entry(id, keyPairs) }
+        lock.lock()
+        try {
+            val stream = entries.getOrPut(key) { linkedMapOf() }
+            val entry = stream.getOrPut(id) { Entry(key, id, keyPairs) }
+            condition.signalAll()
 
-        return entry.id
+            return entry.id
+        } finally {
+            lock.unlock()
+        }
     }
 
     fun xrange(key: String, start: String, end: String): List<Entry> {
@@ -28,13 +39,51 @@ class Streams(
         }
     }
 
-    fun xread(key: String, id: String): List<Entry> {
-        val stream = entries[key] ?: return emptyList()
-        val startId = StreamId.parse(id)
+    fun xread(query: StreamQuery): Map<String, List<Entry>>? {
+        fun read(): Map<String, List<Entry>> {
+            return query.keyIds()
+                .flatMap { (key, id) ->
+                    val stream = entries[key] ?: return@flatMap emptyList()
+                    val startId = StreamId.parse(id)
 
-        return stream.entries
-            .filter { startId < StreamId.parse(it.key) }
-            .map { it.value }
+                    stream.entries
+                        .filter { startId < StreamId.parse(it.key) }
+                        .map { it.value }
+                }
+                .groupBy { it.key }
+        }
+
+        if (!query.isBlocking()) {
+            val result = read()
+            return result.ifEmpty { null }
+        }
+
+        lock.lock()
+        try {
+            val timeoutNano = TimeUnit.MILLISECONDS.toNanos(query.blockTimeout!!)
+            val waitUntil = System.nanoTime() + timeoutNano
+
+            while (true) {
+                val result = read()
+                if (result.isNotEmpty()) {
+                    return result
+                }
+
+                val remaining = waitUntil - System.nanoTime()
+                if (query.blockTimeout == 0L) {
+                    condition.await()
+                    continue
+                }
+
+                if (remaining <= 0) {
+                    return null
+                }
+
+                condition.awaitNanos(remaining)
+            }
+        } finally {
+            lock.unlock()
+        }
     }
 
     private fun parseRangeId(id: String, defaultSequence: Long): StreamId {
@@ -63,6 +112,7 @@ class Streams(
     override operator fun contains(key: String): Boolean = key in entries
 
     data class Entry(
+        val key: String,
         val id: String,
         val keyPairs: List<Pair<String, String>>
     ) {

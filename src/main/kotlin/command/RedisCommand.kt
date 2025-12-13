@@ -5,6 +5,7 @@ import protocol.getBulkString
 import protocol.getBulkStrings
 import store.RedisDataStore
 import store.streams.StreamIdGeneration
+import store.streams.StreamQuery
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
@@ -302,45 +303,22 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             // XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id
-            val keyIds = parseQuery(arguments)
-            if (keyIds.isEmpty()) {
+            val query = StreamQuery.parse(arguments)
+            if (!query.isValid()) {
                 return RedisValue.SimpleErrors("Invalid arguments.")
             }
 
-            val streamEntries = keyIds.map { (key, id) ->
-                val entries = store.xread(key, id)
+            val entries = store.xread(query) ?: return RedisValue.NullArray()
+
+            return RedisValue.Array(entries.map { entry ->
                 RedisValue.Array(
                     listOf(
-                        RedisValue.BulkString(key),
-                        RedisValue.Array(
-                            entries.map { it.toRedisValue() })
+                        RedisValue.BulkString(entry.key),
+                        RedisValue.Array(entry.value.map { it.toRedisValue() })
                     )
                 )
             }
-
-            return RedisValue.Array(streamEntries)
-        }
-
-        private fun parseQuery(arguments: List<RedisValue>): List<Pair<String, String>> {
-            // 첫번째 인자를 STREAMS로 가정
-            val arguments = arguments.drop(1)
-                .mapNotNull { it as? RedisValue.BulkString }
-                .map { it.value }
-
-            if (arguments.isEmpty()) {
-                return emptyList()
-            }
-
-            if (arguments.size % 2 != 0) {
-                return emptyList()
-            }
-
-            val keySize = arguments.size / 2
-
-            val keys = arguments.take(keySize)
-            val ids = arguments.drop(keySize)
-
-            return keys.zip(ids)
+            )
         }
     }
 }

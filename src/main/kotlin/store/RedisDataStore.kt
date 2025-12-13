@@ -3,6 +3,7 @@ package store
 import protocol.RedisDataType
 import store.lists.Lists
 import store.streams.StreamIdGeneration
+import store.streams.StreamQuery
 import store.streams.Streams
 import store.strings.Strings
 import java.util.concurrent.TimeUnit
@@ -109,8 +110,8 @@ class RedisDataStore {
         return streams.xrange(key, start, end)
     }
 
-    fun xread(key: String, id: String): List<Streams.Entry> {
-        return streams.xread(key, id)
+    fun xread(query: StreamQuery): Map<String, List<Streams.Entry>>? {
+        return streams.xread(query)
     }
 
     fun <R> atomic(operation: () -> R): R {
