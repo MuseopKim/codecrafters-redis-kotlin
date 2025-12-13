@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.collections.emptyList
 
 class Streams(
     private val sequenceTrackers: ConcurrentHashMap<String, ConcurrentHashMap<Long, AtomicLong>> = ConcurrentHashMap(),
@@ -17,17 +18,18 @@ class Streams(
 ) : KeyStore {
 
     fun xadd(key: String, id: StreamId, keyPairs: List<Pair<String, String>>): StreamId {
-        val stream = entries.computeIfAbsent(key) { ConcurrentSkipListMap() }
-        stream.computeIfAbsent(id) { Entry(key, id, keyPairs) }
-
         lock.lock()
         try {
+            val currentTimestamp = System.currentTimeMillis()
+            val stream = entries.computeIfAbsent(key) { ConcurrentSkipListMap() }
+
+            stream.computeIfAbsent(id) { Entry(key, id, keyPairs, currentTimestamp) }
             condition.signalAll()
+
+            return id
         } finally {
             lock.unlock()
         }
-
-        return id
     }
 
     fun xrange(key: String, start: String, end: String): List<Entry> {
@@ -42,34 +44,52 @@ class Streams(
     }
 
     fun xread(query: StreamQuery): Map<String, List<Entry>>? {
-        fun read(): Map<String, List<Entry>> {
+        fun startKeyIds(): Map<String, StreamId> {
             return query.keyIds()
-                .flatMap { (key, id) ->
-                    val stream = entries[key] ?: return@flatMap emptyList()
-                    val startId = StreamId.parse(id)
+                .mapNotNull { (key, id) ->
+                    val stream = entries[key] ?: return@mapNotNull null
+                    val startId = if (id == "$") {
+                        stream.lastKey() ?: StreamId(0, 0)
+                    } else {
+                        StreamId.parse(id)
+                    }
 
-                    stream.values.filter { entry -> startId < entry.id }
+                    Pair(key, startId)
+                }
+                .associate { it.first to it.second }
+        }
+
+        fun read(startKeyIds: Map<String, StreamId>): Map<String, List<Entry>> {
+            return startKeyIds.entries
+                .flatMap { keyToId ->
+                    val stream = entries[keyToId.key] ?: return@flatMap emptyList()
+                    stream.values.filter { keyToId.value < it.id }
                 }
                 .groupBy { it.streamKey }
         }
 
+        val startKeyIds = startKeyIds()
         if (!query.isBlocking()) {
-            val result = read()
+            val result = read(startKeyIds)
             return result.ifEmpty { null }
         }
 
         lock.lock()
         try {
+            val currentTimestamp = System.currentTimeMillis()
             val timeoutNano = TimeUnit.MILLISECONDS.toNanos(query.blockTimeout!!)
-            val waitUntil = System.nanoTime() + timeoutNano
+            val waitUntil = TimeUnit.MILLISECONDS.toNanos(currentTimestamp) + timeoutNano
 
             while (true) {
-                val result = read()
+                val result = read(startKeyIds)
                 if (result.isNotEmpty()) {
-                    return result
+                    return result.values
+                        .flatMap { it }
+                        .groupBy { it.streamKey }
                 }
 
-                val remaining = waitUntil - System.nanoTime()
+                val remaining =
+                    waitUntil - TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis())
                 if (query.blockTimeout == 0L) {
                     condition.await()
                     continue
@@ -115,7 +135,8 @@ class Streams(
     data class Entry(
         val streamKey: String,
         val id: StreamId,
-        val keyPairs: List<Pair<String, String>>
+        val keyPairs: List<Pair<String, String>>,
+        val timestamp: Long
     ) {
         fun toRedisValue(): RedisValue.Array {
             val keyPairsAsBulkString = mutableListOf<RedisValue.BulkString>()
