@@ -1,6 +1,6 @@
 import command.CommandDispatcher
 import command.RedisCommandParser
-import command.RedisDataStore
+import store.RedisDataStore
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.net.Socket

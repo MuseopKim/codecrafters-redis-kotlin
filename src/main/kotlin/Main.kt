@@ -1,4 +1,4 @@
-import command.RedisDataStore
+import store.RedisDataStore
 import java.net.ServerSocket
 
 fun main(args: Array<String>) {

@@ -1,5 +1,7 @@
 package command;
 
+import store.RedisDataStore
+
 class CommandDispatcher {
 
     fun dispatch(value: RedisValue, store: RedisDataStore): RedisValue {

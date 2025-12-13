@@ -1,5 +1,7 @@
 package command
 
+import store.RedisDataStore
+import store.streams.StreamIdGeneration
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
@@ -238,7 +240,7 @@ sealed class RedisCommand {
             val streamIdGeneration = streams.generateId(key.value, id.value)
 
             return when (streamIdGeneration) {
-                is RedisDataStore.Streams.StreamIdGeneration.Success -> {
+                is StreamIdGeneration.Success -> {
                     val addedId = streams.xadd(
                         key.value,
                         streamIdGeneration.id.value(),
@@ -248,7 +250,7 @@ sealed class RedisCommand {
                     RedisValue.BulkString(addedId)
                 }
 
-                is RedisDataStore.Streams.StreamIdGeneration.Error -> RedisValue.SimpleErrors(
+                is StreamIdGeneration.Error -> RedisValue.SimpleErrors(
                     streamIdGeneration.message
                 )
             }
