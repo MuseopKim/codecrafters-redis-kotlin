@@ -272,28 +272,7 @@ sealed class RedisCommand {
                 return RedisValue.NullArray()
             }
 
-            val entriesAsArray = mutableListOf<RedisValue.Array>()
-            for (entry in streamEntries) {
-                val id = entry.id
-                val keyPairs = entry.keyPairs
-
-                val keyPairsAsBulkString = mutableListOf<RedisValue.BulkString>()
-                for (keyPair in keyPairs) {
-                    keyPairsAsBulkString.add(RedisValue.BulkString(keyPair.first))
-                    keyPairsAsBulkString.add(RedisValue.BulkString(keyPair.second))
-                }
-
-                entriesAsArray.add(
-                    RedisValue.Array(
-                        listOf(
-                            RedisValue.BulkString(id),
-                            RedisValue.Array(keyPairsAsBulkString)
-                        )
-                    )
-                )
-            }
-
-            return RedisValue.Array(entriesAsArray)
+            return RedisValue.Array(streamEntries.map { it.toRedisValue() })
         }
     }
 

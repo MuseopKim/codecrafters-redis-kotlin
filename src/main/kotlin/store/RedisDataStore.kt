@@ -96,7 +96,7 @@ class RedisDataStore {
     fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): StreamIdGeneration {
         return when (val idGeneration = streams.generateId(key, id)) {
             is StreamIdGeneration.Success -> {
-                streams.xadd(key, idGeneration.id.value(), keyPairs)
+                streams.xadd(key, idGeneration.id, keyPairs)
                 idGeneration
             }
 

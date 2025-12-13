@@ -2,29 +2,32 @@ package store.streams
 
 import protocol.RedisValue
 import store.KeyStore
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
 
 class Streams(
-    private val sequenceTrackers: MutableMap<String, MutableMap<Long, AtomicLong>> = mutableMapOf(),
-    private val entries: LinkedHashMap<String, LinkedHashMap<String, Entry>> = linkedMapOf(),
+    private val sequenceTrackers: ConcurrentHashMap<String, ConcurrentHashMap<Long, AtomicLong>> = ConcurrentHashMap(),
+    private val entries: ConcurrentHashMap<String, ConcurrentSkipListMap<StreamId, Entry>> = ConcurrentHashMap(),
     private val lock: ReentrantLock = ReentrantLock(),
     private val condition: Condition = lock.newCondition()
 ) : KeyStore {
 
-    fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): String {
+    fun xadd(key: String, id: StreamId, keyPairs: List<Pair<String, String>>): StreamId {
+        val stream = entries.computeIfAbsent(key) { ConcurrentSkipListMap() }
+        stream.computeIfAbsent(id) { Entry(key, id, keyPairs) }
+
         lock.lock()
         try {
-            val stream = entries.getOrPut(key) { linkedMapOf() }
-            val entry = stream.getOrPut(id) { Entry(key, id, keyPairs) }
             condition.signalAll()
-
-            return entry.id
         } finally {
             lock.unlock()
         }
+
+        return id
     }
 
     fun xrange(key: String, start: String, end: String): List<Entry> {
@@ -34,8 +37,7 @@ class Streams(
         val endId = parseRangeId(end, Long.MAX_VALUE)
 
         return stream.values.filter { entry ->
-            val entryId = StreamId.parse(entry.id)
-            startId <= entryId && entryId <= endId
+            startId <= entry.id && entry.id <= endId
         }
     }
 
@@ -46,11 +48,9 @@ class Streams(
                     val stream = entries[key] ?: return@flatMap emptyList()
                     val startId = StreamId.parse(id)
 
-                    stream.entries
-                        .filter { startId < StreamId.parse(it.key) }
-                        .map { it.value }
+                    stream.values.filter { entry -> startId < entry.id }
                 }
-                .groupBy { it.key }
+                .groupBy { it.streamKey }
         }
 
         if (!query.isBlocking()) {
@@ -103,17 +103,18 @@ class Streams(
     }
 
     fun generateId(key: String, id: String): StreamIdGeneration {
-        val lastId = entries[key]?.keys?.lastOrNull()?.let { StreamId.parse(it) }
-        val sequenceTracker = sequenceTrackers.getOrPut(key) { mutableMapOf() }
+        val stream = entries[key]
+        val lastId = if (stream.isNullOrEmpty()) null else stream.lastKey()
+        val sequenceTracker = sequenceTrackers.computeIfAbsent(key) { ConcurrentHashMap() }
 
         return StreamId.generate(id, lastId, sequenceTracker)
     }
 
-    override operator fun contains(key: String): Boolean = key in entries
+    override operator fun contains(key: String): Boolean = entries.containsKey(key)
 
     data class Entry(
-        val key: String,
-        val id: String,
+        val streamKey: String,
+        val id: StreamId,
         val keyPairs: List<Pair<String, String>>
     ) {
         fun toRedisValue(): RedisValue.Array {
@@ -128,7 +129,7 @@ class Streams(
 
             return RedisValue.Array(
                 listOf(
-                    RedisValue.BulkString(id),
+                    RedisValue.BulkString(id.value()),
                     RedisValue.Array(keyPairsAsBulkString)
                 )
             )
