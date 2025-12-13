@@ -1,6 +1,6 @@
 package store
 
-import command.RedisDataType
+import protocol.RedisDataType
 import store.lists.Lists
 import store.streams.Streams
 import store.strings.Strings

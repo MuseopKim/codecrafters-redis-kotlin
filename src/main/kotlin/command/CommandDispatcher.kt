@@ -1,5 +1,6 @@
 package command;
 
+import protocol.RedisValue
 import store.RedisDataStore
 
 class CommandDispatcher {

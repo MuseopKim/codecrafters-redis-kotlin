@@ -1,4 +1,4 @@
-package command
+package protocol
 
 enum class RedisDataType(
     val typeName: String

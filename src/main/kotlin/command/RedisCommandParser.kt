@@ -1,5 +1,6 @@
 package command
 
+import protocol.RedisValue
 import java.io.BufferedReader
 
 class RedisCommandParser(private val reader: BufferedReader) {
