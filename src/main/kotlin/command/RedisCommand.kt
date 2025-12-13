@@ -302,32 +302,45 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             // XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id
-            arguments.getBulkString(0)
-                ?: return RedisValue.SimpleErrors("Invalid arguments.")
-
-            // 첫번째 인자를 STREAMS로 가정
-
-            val key = arguments.getBulkString(1)
-                ?: return RedisValue.SimpleErrors("Invalid arguments.")
-
-            val id = arguments.getBulkString(2)
-                ?: return RedisValue.SimpleErrors("Invalid arguments.")
-
-            val streamEntries = store.xread(key.value, id.value)
-            if (streamEntries.isEmpty()) {
-                return RedisValue.NullArray()
+            val keyIds = parseQuery(arguments)
+            if (keyIds.isEmpty()) {
+                return RedisValue.SimpleErrors("Invalid arguments.")
             }
 
-            return RedisValue.Array(
-                listOf(
-                    RedisValue.Array(
-                        listOf(
-                            RedisValue.BulkString(key.value),
-                            RedisValue.Array(streamEntries.map { it.toRedisValue() })
-                        )
+            val streamEntries = keyIds.map { (key, id) ->
+                val entries = store.xread(key, id)
+                RedisValue.Array(
+                    listOf(
+                        RedisValue.BulkString(key),
+                        RedisValue.Array(
+                            entries.map { it.toRedisValue() })
                     )
                 )
-            )
+            }
+
+            return RedisValue.Array(streamEntries)
+        }
+
+        private fun parseQuery(arguments: List<RedisValue>): List<Pair<String, String>> {
+            // 첫번째 인자를 STREAMS로 가정
+            val arguments = arguments.drop(1)
+                .mapNotNull { it as? RedisValue.BulkString }
+                .map { it.value }
+
+            if (arguments.isEmpty()) {
+                return emptyList()
+            }
+
+            if (arguments.size % 2 != 0) {
+                return emptyList()
+            }
+
+            val keySize = arguments.size / 2
+
+            val keys = arguments.take(keySize)
+            val ids = arguments.drop(keySize)
+
+            return keys.zip(ids)
         }
     }
 }
