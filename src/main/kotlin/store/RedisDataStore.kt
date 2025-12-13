@@ -109,6 +109,10 @@ class RedisDataStore {
         return streams.xrange(key, start, end)
     }
 
+    fun xread(key: String, id: String): List<Streams.Entry> {
+        return streams.xread(key, id)
+    }
+
     fun <R> atomic(operation: () -> R): R {
         lock.lock()
         return try {

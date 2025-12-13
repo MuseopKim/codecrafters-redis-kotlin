@@ -1,5 +1,6 @@
 package store.streams
 
+import protocol.RedisValue
 import store.KeyStore
 import java.util.concurrent.atomic.AtomicLong
 
@@ -25,6 +26,15 @@ class Streams(
             val entryId = StreamId.parse(entry.id)
             startId <= entryId && entryId <= endId
         }
+    }
+
+    fun xread(key: String, id: String): List<Entry> {
+        val stream = entries[key] ?: return emptyList()
+        val startId = StreamId.parse(id)
+
+        return stream.entries
+            .filter { startId < StreamId.parse(it.key) }
+            .map { it.value }
     }
 
     private fun parseRangeId(id: String, defaultSequence: Long): StreamId {
@@ -55,5 +65,23 @@ class Streams(
     data class Entry(
         val id: String,
         val keyPairs: List<Pair<String, String>>
-    )
+    ) {
+        fun toRedisValue(): RedisValue.Array {
+            val keyPairsAsBulkString = mutableListOf<RedisValue.BulkString>()
+
+            for (keyPair in keyPairs) {
+                val key = keyPair.first
+                val value = keyPair.second
+                keyPairsAsBulkString.add(RedisValue.BulkString(key))
+                keyPairsAsBulkString.add(RedisValue.BulkString(value))
+            }
+
+            return RedisValue.Array(
+                listOf(
+                    RedisValue.BulkString(id),
+                    RedisValue.Array(keyPairsAsBulkString)
+                )
+            )
+        }
+    }
 }

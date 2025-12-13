@@ -28,6 +28,7 @@ class CommandDispatcher {
             "TYPE" -> RedisCommand.TYPECommand
             "XADD" -> RedisCommand.XADDCommand
             "XRANGE" -> RedisCommand.XRANGECommand
+            "XREAD" -> RedisCommand.XREADCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

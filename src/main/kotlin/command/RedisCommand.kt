@@ -295,4 +295,39 @@ sealed class RedisCommand {
             return RedisValue.Array(entriesAsArray)
         }
     }
+
+    object XREADCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            // XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id
+            arguments.getBulkString(0)
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            // 첫번째 인자를 STREAMS로 가정
+
+            val key = arguments.getBulkString(1)
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val id = arguments.getBulkString(2)
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val streamEntries = store.xread(key.value, id.value)
+            if (streamEntries.isEmpty()) {
+                return RedisValue.NullArray()
+            }
+
+            return RedisValue.Array(
+                listOf(
+                    RedisValue.Array(
+                        listOf(
+                            RedisValue.BulkString(key.value),
+                            RedisValue.Array(streamEntries.map { it.toRedisValue() })
+                        )
+                    )
+                )
+            )
+        }
+    }
 }
