@@ -1,8 +1,10 @@
 package store.strings
 
+import store.KeyStore
+
 class Strings(
     private val entries: MutableMap<String, Entry> = mutableMapOf()
-) {
+) : KeyStore {
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
@@ -21,7 +23,7 @@ class Strings(
         return entry.value
     }
 
-    operator fun contains(key: String): Boolean = key in entries
+    override operator fun contains(key: String): Boolean = key in entries
 
     data class Entry(
         val value: String,

@@ -1,11 +1,12 @@
 package store.streams
 
+import store.KeyStore
 import java.util.concurrent.atomic.AtomicLong
 
 class Streams(
     private val sequenceTrackers: MutableMap<String, MutableMap<Long, AtomicLong>> = mutableMapOf(),
     private val entries: LinkedHashMap<String, LinkedHashMap<String, Entry>> = linkedMapOf()
-) {
+) : KeyStore {
 
     fun xadd(key: String, id: String, keyPairs: List<Pair<String, String>>): String {
         val stream = entries.getOrPut(key) { linkedMapOf() }
@@ -49,7 +50,7 @@ class Streams(
         return StreamId.generate(id, lastId, sequenceTracker)
     }
 
-    operator fun contains(key: String): Boolean = key in entries
+    override operator fun contains(key: String): Boolean = key in entries
 
     data class Entry(
         val id: String,
