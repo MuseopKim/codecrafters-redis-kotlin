@@ -2,6 +2,7 @@ package store
 
 import command.RedisDataType
 import store.streams.Streams
+import store.strings.Strings
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.ReentrantLock
@@ -13,27 +14,16 @@ class RedisDataStore {
     private val lock = ReentrantLock()
 
     val streams = Streams()
-    private val strings = mutableMapOf<String, StringEntry>()
+    private val strings = Strings()
     private val lists = mutableMapOf<String, ArrayDeque<String>>()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
-        val expiresAt = px?.let { System.currentTimeMillis() + it }
-
-        strings[key] = StringEntry(value, expiresAt)
+        strings.set(key, value, px)
     }
 
     fun get(key: String): String? {
-        val currentTime = System.currentTimeMillis()
-
-        val entry = strings[key] ?: return null
-
-        if (entry.isExpired(currentTime)) {
-            strings.remove(key)
-            return null
-        }
-
-        return entry.value
+        return strings.get(key)
     }
 
     fun lpush(key: String, values: List<String>): Int {
@@ -148,13 +138,4 @@ class RedisDataStore {
             lock.unlock()
         }
     }
-
-    data class StringEntry(
-        val value: String,
-        val expiresAt: Long? = null
-    ) {
-        fun isExpired(currentTimestamp: Long): Boolean =
-            expiresAt != null && expiresAt <= currentTimestamp
-    }
-
 }
