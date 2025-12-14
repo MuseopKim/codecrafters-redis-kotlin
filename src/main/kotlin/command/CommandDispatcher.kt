@@ -33,6 +33,7 @@ class CommandDispatcher {
             "XREAD" -> RedisCommand.XREADCommand
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
+            "DISCARD" -> RedisCommand.DISCARDCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 
