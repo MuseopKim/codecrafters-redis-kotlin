@@ -96,7 +96,7 @@ sealed class RedisCommand {
 
             val sizeOfList = store.rpush(key.value, elements.map { it.value })
 
-            return RedisValue.Integer(sizeOfList)
+            return RedisValue.Integer(sizeOfList.toLong())
         }
     }
 
@@ -115,7 +115,7 @@ sealed class RedisCommand {
 
             val sizeOfList = store.lpush(key.value, elements.map { it.value })
 
-            return RedisValue.Integer(sizeOfList)
+            return RedisValue.Integer(sizeOfList.toLong())
         }
     }
 
@@ -147,7 +147,7 @@ sealed class RedisCommand {
             val key = arguments.getBulkString(0)
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
-            return RedisValue.Integer(store.llen(key.value))
+            return RedisValue.Integer(store.llen(key.value).toLong())
         }
     }
 
@@ -198,6 +198,21 @@ sealed class RedisCommand {
             } catch (e: TimeoutException) {
                 return RedisValue.NullArray()
             }
+        }
+    }
+
+    object INCRCommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val key = arguments.getBulkString(0)
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val increment =
+                store.incr(key.value) ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            return RedisValue.Integer(increment)
         }
     }
 

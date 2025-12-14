@@ -87,6 +87,10 @@ class RedisDataStore {
         }
     }
 
+    fun incr(key: String): Long? {
+        return strings.incr(key)
+    }
+
     fun type(key: String): String {
         return keyStores.firstOrNull { (store, _) -> key in store }
             ?.second?.typeName

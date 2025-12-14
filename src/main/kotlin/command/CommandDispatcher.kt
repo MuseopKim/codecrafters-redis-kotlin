@@ -25,6 +25,7 @@ class CommandDispatcher {
             "LLEN" -> RedisCommand.LLENCommand
             "LPOP" -> RedisCommand.LPOPCommand
             "BLPOP" -> RedisCommand.BLPOPCommand
+            "INCR" -> RedisCommand.INCRCommand
             "TYPE" -> RedisCommand.TYPECommand
             "XADD" -> RedisCommand.XADDCommand
             "XRANGE" -> RedisCommand.XRANGECommand

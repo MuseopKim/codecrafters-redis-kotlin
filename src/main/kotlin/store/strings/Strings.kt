@@ -1,14 +1,18 @@
 package store.strings
 
 import store.KeyStore
+import java.util.concurrent.ConcurrentHashMap
 
 class Strings(
-    private val entries: MutableMap<String, Entry> = mutableMapOf()
+    private val entries: ConcurrentHashMap<String, Entry> = ConcurrentHashMap()
 ) : KeyStore {
 
     fun set(key: String, value: String, px: Long? = null) {
         val expiresAt = px?.let { System.currentTimeMillis() + it }
-        entries[key] = Entry(value, expiresAt)
+        entries[key] = Entry(
+            value,
+            expiresAt
+        )
     }
 
     fun get(key: String): String? {
@@ -23,13 +27,29 @@ class Strings(
         return entry.value
     }
 
-    override operator fun contains(key: String): Boolean = key in entries
+    fun incr(key: String): Long? {
+        val entry = entries.compute(key) { _, entry ->
+            if (entry?.isNumeric() != true) {
+                return@compute null
+            }
+
+            val value = entry.value.toLong() + 1
+            Entry(value.toString(), entry.expiresAt)
+        }
+
+        return entry?.value?.toLongOrNull()
+    }
+
+    override operator fun contains(key: String): Boolean = entries.containsKey(key)
 
     data class Entry(
         val value: String,
         val expiresAt: Long? = null
     ) {
+
         fun isExpired(currentTimestamp: Long): Boolean =
             expiresAt != null && expiresAt <= currentTimestamp
+
+        fun isNumeric(): Boolean = value.toLongOrNull() != null
     }
 }

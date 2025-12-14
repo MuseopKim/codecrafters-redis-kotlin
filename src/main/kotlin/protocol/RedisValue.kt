@@ -22,7 +22,7 @@ sealed class RedisValue {
         override fun encodeValue(): String = "$-1\r\n"
     }
 
-    class Integer(val value: Int) : RedisValue() {
+    class Integer(val value: Long) : RedisValue() {
         override fun encodeValue(): String = ":$value\r\n"
     }
 
