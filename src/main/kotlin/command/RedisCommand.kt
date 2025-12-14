@@ -1,5 +1,6 @@
 package command
 
+import Session
 import protocol.RedisValue
 import protocol.getBulkString
 import protocol.getBulkStrings
@@ -9,6 +10,19 @@ import store.streams.StreamQuery
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
+
+    open fun execute(
+        session: Session,
+        arguments: List<RedisValue>,
+        store: RedisDataStore
+    ): RedisValue {
+        if (session.isTransaction()) {
+            session.addCommand(this, arguments)
+            return RedisValue.BulkString("QUEUED")
+        }
+
+        return execute(arguments, store)
+    }
 
     abstract fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue
 
@@ -319,10 +333,52 @@ sealed class RedisCommand {
 
     object MULTICommand : RedisCommand() {
         override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            session.transaction(true)
+            return execute(arguments, store)
+        }
+
+        override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
             return RedisValue.SimpleString("OK")
         }
     }
+
+    object EXECCommand : RedisCommand() {
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            if (!session.isTransaction()) {
+                return RedisValue.SimpleErrors("ERR EXEC without MULTI")
+            }
+
+            val commandResults = session.commands()
+                .map { it.command.execute(it.arguments, store) }
+
+            val transactionResult = execute(commandResults, store)
+
+            session.transaction(false)
+
+            return transactionResult
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            return RedisValue.Array(arguments)
+        }
+    }
+
+    data class Entry(
+        val command: RedisCommand,
+        val arguments: List<RedisValue>
+    )
 }

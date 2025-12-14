@@ -1,11 +1,12 @@
 package command;
 
+import Session
 import protocol.RedisValue
 import store.RedisDataStore
 
 class CommandDispatcher {
 
-    fun dispatch(value: RedisValue, store: RedisDataStore): RedisValue {
+    fun dispatch(session: Session, value: RedisValue, store: RedisDataStore): RedisValue {
         if (value !is RedisValue.Array) {
             throw IllegalArgumentException("The value is not a command.")
         }
@@ -31,9 +32,10 @@ class CommandDispatcher {
             "XRANGE" -> RedisCommand.XRANGECommand
             "XREAD" -> RedisCommand.XREADCommand
             "MULTI" -> RedisCommand.MULTICommand
+            "EXEC" -> RedisCommand.EXECCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 
-        return redisCommand.execute(arguments, store)
+        return redisCommand.execute(session, arguments, store)
     }
 }
