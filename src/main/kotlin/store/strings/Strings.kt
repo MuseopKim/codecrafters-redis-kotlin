@@ -29,8 +29,12 @@ class Strings(
 
     fun incr(key: String): Long? {
         val entry = entries.compute(key) { _, entry ->
-            if (entry?.isNumeric() != true) {
-                return@compute null
+            if (entry == null) {
+                return@compute Entry(1.toString(), null)
+            }
+
+            if (!entry.isNumeric()) {
+                return@compute entry
             }
 
             val value = entry.value.toLong() + 1
