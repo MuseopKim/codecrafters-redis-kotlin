@@ -359,21 +359,20 @@ sealed class RedisCommand {
                 return RedisValue.SimpleErrors("ERR EXEC without MULTI")
             }
 
-            val commandResults = session.commands()
+            val results = session.commands()
                 .map { it.command.execute(it.arguments, store) }
 
-            val transactionResult = execute(commandResults, store)
-
             session.transaction(false)
+            session.clearCommands()
 
-            return transactionResult
+            return RedisValue.Array(results)
         }
 
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            return RedisValue.Array(arguments)
+            return RedisValue.SimpleErrors("ERR EXEC without MULTI")
         }
     }
 

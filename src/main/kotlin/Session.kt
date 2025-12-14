@@ -47,6 +47,8 @@ class Session(
 
     fun commands(): List<RedisCommand.Entry> = commands
 
+    fun clearCommands() = commands.clear()
+
     fun transaction(transaction: Boolean): Boolean {
         this.transaction = transaction
         return transaction
