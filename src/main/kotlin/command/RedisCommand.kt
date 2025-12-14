@@ -210,7 +210,8 @@ sealed class RedisCommand {
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
             val increment =
-                store.incr(key.value) ?: return RedisValue.SimpleErrors("Invalid arguments.")
+                store.incr(key.value)
+                    ?: return RedisValue.SimpleErrors("ERR value is not an integer or out of range")
 
             return RedisValue.Integer(increment)
         }
