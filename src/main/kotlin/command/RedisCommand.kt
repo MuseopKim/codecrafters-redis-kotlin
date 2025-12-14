@@ -316,4 +316,13 @@ sealed class RedisCommand {
             )
         }
     }
+
+    object MULTICommand : RedisCommand() {
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            return RedisValue.SimpleString("OK")
+        }
+    }
 }
