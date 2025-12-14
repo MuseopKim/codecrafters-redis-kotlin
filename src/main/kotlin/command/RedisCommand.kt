@@ -18,7 +18,7 @@ sealed class RedisCommand {
     ): RedisValue {
         if (session.isTransaction()) {
             session.addCommand(this, arguments)
-            return RedisValue.BulkString("QUEUED")
+            return RedisValue.SimpleString("QUEUED")
         }
 
         return execute(arguments, store)
