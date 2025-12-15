@@ -6,6 +6,13 @@ fun main(args: Array<String>) {
         6379
     }
 
-    val redisServer = RedisServer(host = "localhost", port = port)
+    val roleArgumentIndex = args.indexOfFirst { it == "--replicaof" }
+    val role = if (roleArgumentIndex != -1 && args.size > roleArgumentIndex + 1) {
+        Role.REPLICA
+    } else {
+        Role.MASTER
+    }
+
+    val redisServer = RedisServer(role = role, host = "localhost", port = port)
     redisServer.run()
 }
