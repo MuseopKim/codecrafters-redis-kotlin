@@ -34,6 +34,7 @@ class CommandDispatcher {
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand
+            "INFO" -> RedisCommand.INFOCommand
             else -> throw IllegalArgumentException("Unknown command")
         }
 

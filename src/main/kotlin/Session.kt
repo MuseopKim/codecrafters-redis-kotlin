@@ -8,6 +8,7 @@ import java.io.BufferedWriter
 import java.net.Socket
 
 class Session(
+    private val serverMetadata: RedisServer.Metadata,
     private val socket: Socket,
     private val dataStore: RedisDataStore
 ) : Runnable {
@@ -37,6 +38,8 @@ class Session(
             }
         }
     }
+
+    fun serverMetadata() : RedisServer.Metadata = serverMetadata
 
     fun isTransaction(): Boolean = transaction
 

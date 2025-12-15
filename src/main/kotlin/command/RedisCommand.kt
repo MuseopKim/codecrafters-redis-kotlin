@@ -401,6 +401,31 @@ sealed class RedisCommand {
         }
     }
 
+    object INFOCommand : RedisCommand() {
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val metadata = session.serverMetadata()
+
+            val serverInformation =
+                arguments.getBulkString(0)
+                    ?.takeIf { it.value == "replication" }
+                    ?.let { metadata.replication()}
+                    ?: metadata.information()
+
+            return RedisValue.BulkString(serverInformation)
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("INFO command with no session is not supported.")
+        }
+    }
+
     data class Entry(
         val command: RedisCommand,
         val arguments: List<RedisValue>
