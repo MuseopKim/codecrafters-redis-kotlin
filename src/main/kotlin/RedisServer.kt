@@ -12,7 +12,7 @@ class RedisServer(
     fun run() {
         if (role == Role.REPLICA) {
             Thread {
-                val client = ReplicationClient(masterHost, masterPort)
+                val client = ReplicationClient(host, port, masterHost, masterPort)
                 client.handshake()
             }.start()
         }
