@@ -5,9 +5,18 @@ class RedisServer(
     private val host: String,
     private val port: Int,
     private val role: Role,
+    private val masterHost: String,
+    private val masterPort: Int
 ) {
 
     fun run() {
+        if (role == Role.REPLICA) {
+            Thread {
+                val client = ReplicationClient(masterHost, masterPort)
+                client.handshake()
+            }.start()
+        }
+
         val serverSocket = ServerSocket(port)
         // Since the tester restarts your program quite often, setting SO_REUSEADDR
         // ensures that we don't run into 'Address already in use' errors
