@@ -26,4 +26,15 @@ data class Connection(
         writer.write(RedisValue.Array(argumentsAsBulkString).encodeValue())
         writer.flush()
     }
+
+    fun psync(replicationId: String, offset: Long) {
+        val argumentAsBulkString = mutableListOf(
+            RedisValue.BulkString("PSYNC"),
+            RedisValue.BulkString(replicationId),
+            RedisValue.BulkString(offset.toString())
+        )
+
+        writer.write(RedisValue.Array(argumentAsBulkString).encodeValue())
+        writer.flush()
+    }
 }

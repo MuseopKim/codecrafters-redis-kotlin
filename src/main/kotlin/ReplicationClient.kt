@@ -14,6 +14,8 @@ class ReplicationClient(
         connection.read()
         connection.replconf(listOf("capa", "psync2"))
         connection.read()
+        connection.psync("?", -1)
+        connection.read()
     }
 
     private fun connect(): Connection {
