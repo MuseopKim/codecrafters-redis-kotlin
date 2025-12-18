@@ -56,5 +56,16 @@ class Session(
         this.transaction = transaction
         return transaction
     }
+
+    fun write(value: RedisValue) {
+        writer.write(value.encodeValue())
+        writer.flush()
+    }
+
+    fun wirte(bytes: ByteArray) {
+        writer.flush()
+        socket.outputStream.write(bytes)
+        socket.outputStream.flush()
+    }
 }
 

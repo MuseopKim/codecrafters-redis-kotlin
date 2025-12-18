@@ -7,6 +7,7 @@ import protocol.getBulkStrings
 import store.RedisDataStore
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
+import java.util.Base64
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
@@ -437,6 +438,8 @@ sealed class RedisCommand {
     }
 
     object PSYNC : RedisCommand() {
+        private val EMPTY_RDB: ByteArray = Base64.getDecoder()
+            .decode("UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==")
 
         override fun execute(
             session: Session,
@@ -444,7 +447,13 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             val serverMetadata = session.serverMetadata()
-            return RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}")
+
+            session.write(RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}"))
+
+            val rdbHeader = "$${EMPTY_RDB.size}\r\n".toByteArray()
+            session.wirte(rdbHeader + EMPTY_RDB)
+
+            return RedisValue.NoResponse
         }
 
         override fun execute(

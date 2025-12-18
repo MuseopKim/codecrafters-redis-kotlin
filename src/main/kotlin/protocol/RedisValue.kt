@@ -48,6 +48,10 @@ sealed class RedisValue {
             return "-${message}\r\n"
         }
     }
+
+    object NoResponse : RedisValue() {
+        override fun encodeValue(): String = ""
+    }
 }
 
 fun List<RedisValue>.getBulkString(index: Int): RedisValue.BulkString? =
