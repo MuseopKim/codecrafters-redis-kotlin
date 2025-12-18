@@ -412,7 +412,7 @@ sealed class RedisCommand {
             val serverInformation =
                 arguments.getBulkString(0)
                     ?.takeIf { it.value == "replication" }
-                    ?.let { metadata.replication()}
+                    ?.let { metadata.replication() }
                     ?: metadata.information()
 
             return RedisValue.BulkString(serverInformation)
@@ -423,6 +423,16 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             throw UnsupportedOperationException("INFO command with no session is not supported.")
+        }
+    }
+
+    object REPLCONFCommand : RedisCommand() {
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            return RedisValue.SimpleString("OK")
         }
     }
 
