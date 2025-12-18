@@ -36,6 +36,7 @@ class CommandDispatcher {
             "DISCARD" -> RedisCommand.DISCARDCommand
             "INFO" -> RedisCommand.INFOCommand
             "REPLCONF" -> RedisCommand.REPLCONFCommand
+            "PSYNC" -> RedisCommand.PSYNC
             else -> throw IllegalArgumentException("Unknown command")
         }
 

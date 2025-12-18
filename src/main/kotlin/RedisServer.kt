@@ -34,18 +34,18 @@ class RedisServer(
     }
 
     data class Metadata(
-        private val version: String = "7.2.4",
-        private val connectedClients: Int = 1,
-        private val usedMemory: Int = 859944,
-        private val role: Role = Role.MASTER,
-        private val connectedSlaves: Int = 0,
-        private val masterReplid: String = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
-        private val masterReplOffset: Int = 0,
-        private val secondReplOffset: Int = -1,
-        private val replBacklogActive: Int = 0,
-        private val replBacklogSize: Int = 1048576,
-        private val replBacklogFirstByteOffset: Int = 0,
-        private val replBacklogHistlen: Int? = null
+        val version: String = "7.2.4",
+        val connectedClients: Int = 1,
+        val usedMemory: Int = 859944,
+        val role: Role = Role.MASTER,
+        val connectedSlaves: Int = 0,
+        val masterReplid: String = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
+        val masterReplOffset: Int = 0,
+        val secondReplOffset: Int = -1,
+        val replBacklogActive: Int = 0,
+        val replBacklogSize: Int = 1048576,
+        val replBacklogFirstByteOffset: Int = 0,
+        val replBacklogHistlen: Int? = null
     ) {
         fun information(): String {
             return """

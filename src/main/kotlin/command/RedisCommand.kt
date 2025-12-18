@@ -436,6 +436,25 @@ sealed class RedisCommand {
         }
     }
 
+    object PSYNC : RedisCommand() {
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val serverMetadata = session.serverMetadata()
+            return RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("FULLRESYNC command with no session is not supported.")
+        }
+    }
+
     data class Entry(
         val command: RedisCommand,
         val arguments: List<RedisValue>
