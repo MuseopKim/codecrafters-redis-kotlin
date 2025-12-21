@@ -27,7 +27,11 @@ sealed class RedisCommand {
 
     abstract fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue
 
+    abstract fun isReplicable(): Boolean
+
     object EchoCommand : RedisCommand() {
+
+        override fun isReplicable() = false
 
         override fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue {
             val argument = arguments.getBulkString(0)
@@ -39,6 +43,8 @@ sealed class RedisCommand {
 
     object PingCommand : RedisCommand() {
 
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -48,6 +54,8 @@ sealed class RedisCommand {
     }
 
     object GetCommand : RedisCommand() {
+
+        override fun isReplicable() = false
 
         override fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue {
             val key = arguments.getBulkString(0)
@@ -59,6 +67,8 @@ sealed class RedisCommand {
     }
 
     object SetCommand : RedisCommand() {
+
+        override fun isReplicable() = true
 
         override fun execute(
             arguments: List<RedisValue>,
@@ -97,6 +107,9 @@ sealed class RedisCommand {
     }
 
     object RPUSHCommand : RedisCommand() {
+
+        override fun isReplicable() = true
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -116,6 +129,9 @@ sealed class RedisCommand {
     }
 
     object LPUSHCommand : RedisCommand() {
+
+        override fun isReplicable() = true
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -135,6 +151,9 @@ sealed class RedisCommand {
     }
 
     object LRANGECommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -155,6 +174,9 @@ sealed class RedisCommand {
     }
 
     object LLENCommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -167,6 +189,9 @@ sealed class RedisCommand {
     }
 
     object LPOPCommand : RedisCommand() {
+
+        override fun isReplicable() = true
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -189,6 +214,9 @@ sealed class RedisCommand {
     }
 
     object BLPOPCommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -217,6 +245,9 @@ sealed class RedisCommand {
     }
 
     object INCRCommand : RedisCommand() {
+
+        override fun isReplicable() = true
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -233,6 +264,9 @@ sealed class RedisCommand {
     }
 
     object TYPECommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -247,6 +281,9 @@ sealed class RedisCommand {
     }
 
     object XADDCommand : RedisCommand() {
+
+        override fun isReplicable() = true
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -285,6 +322,9 @@ sealed class RedisCommand {
     }
 
     object XRANGECommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -308,6 +348,9 @@ sealed class RedisCommand {
     }
 
     object XREADCommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -333,6 +376,9 @@ sealed class RedisCommand {
     }
 
     object MULTICommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             session: Session,
             arguments: List<RedisValue>,
@@ -351,6 +397,9 @@ sealed class RedisCommand {
     }
 
     object EXECCommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             session: Session,
             arguments: List<RedisValue>,
@@ -379,6 +428,8 @@ sealed class RedisCommand {
 
     object DISCARDCommand : RedisCommand() {
 
+        override fun isReplicable() = false
+
         override fun execute(
             session: Session,
             arguments: List<RedisValue>,
@@ -403,6 +454,9 @@ sealed class RedisCommand {
     }
 
     object INFOCommand : RedisCommand() {
+
+        override fun isReplicable() = false
+
         override fun execute(
             session: Session,
             arguments: List<RedisValue>,
@@ -429,6 +483,8 @@ sealed class RedisCommand {
 
     object REPLCONFCommand : RedisCommand() {
 
+        override fun isReplicable() = false
+
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
@@ -438,6 +494,9 @@ sealed class RedisCommand {
     }
 
     object PSYNC : RedisCommand() {
+
+        override fun isReplicable() = false
+
         private val EMPTY_RDB: ByteArray = Base64.getDecoder()
             .decode("UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==")
 
@@ -451,9 +510,9 @@ sealed class RedisCommand {
             session.write(RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}"))
 
             val rdbHeader = "$${EMPTY_RDB.size}\r\n".toByteArray()
-            session.wirte(rdbHeader + EMPTY_RDB)
+            session.write(rdbHeader + EMPTY_RDB)
 
-            return RedisValue.NoResponse
+            return RedisValue.Empty
         }
 
         override fun execute(

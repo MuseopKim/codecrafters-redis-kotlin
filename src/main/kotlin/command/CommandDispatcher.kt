@@ -6,7 +6,7 @@ import store.RedisDataStore
 
 class CommandDispatcher {
 
-    fun dispatch(session: Session, value: RedisValue, store: RedisDataStore): RedisValue {
+    fun dispatch(session: Session, value: RedisValue, store: RedisDataStore): CommandExecution {
         if (value !is RedisValue.Array) {
             throw IllegalArgumentException("The value is not a command.")
         }
@@ -40,6 +40,12 @@ class CommandDispatcher {
             else -> throw IllegalArgumentException("Unknown command")
         }
 
-        return redisCommand.execute(session, arguments, store)
+        val commandResponse = redisCommand.execute(session, arguments, store)
+
+        return CommandExecution(
+            result = commandResponse,
+            rawCommand = value,
+            command = redisCommand
+        )
     }
 }

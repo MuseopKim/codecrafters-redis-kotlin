@@ -1,3 +1,4 @@
+import replication.Replication
 import store.RedisDataStore
 import java.net.ServerSocket
 
@@ -16,20 +17,21 @@ class RedisServer(
             }.start()
         }
 
-        val serverSocket = ServerSocket(port)
-        // Since the tester restarts your program quite often, setting SO_REUSEADDR
-        // ensures that we don't run into 'Address already in use' errors
-        serverSocket.reuseAddress = true
+        val socket = ServerSocket(port)
+        socket.reuseAddress = true
+
+        val replication = when (role) {
+            Role.MASTER -> Replication.Master()
+            Role.REPLICA -> Replication.Disabled
+        }
 
         val serverMetadata = Metadata(role = role)
-
         val dataStore = RedisDataStore()
+
         while (true) {
-
-            val clientSocket = serverSocket.accept()
-
-            val thread = Thread(Session(serverMetadata, clientSocket, dataStore))
-            thread.start()
+            val clientSocket = socket.accept()
+            val session = Session(serverMetadata, clientSocket, dataStore)
+            Thread(SessionHandler(session, dataStore, replication)).start()
         }
     }
 

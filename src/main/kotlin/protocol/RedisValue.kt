@@ -49,7 +49,7 @@ sealed class RedisValue {
         }
     }
 
-    object NoResponse : RedisValue() {
+    object Empty : RedisValue() {
         override fun encodeValue(): String = ""
     }
 }

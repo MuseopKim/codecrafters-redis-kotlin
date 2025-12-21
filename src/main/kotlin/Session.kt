@@ -1,4 +1,3 @@
-import command.CommandDispatcher
 import command.RedisCommand
 import command.RedisCommandParser
 import protocol.RedisValue
@@ -11,35 +10,29 @@ class Session(
     private val serverMetadata: RedisServer.Metadata,
     private val socket: Socket,
     private val dataStore: RedisDataStore
-) : Runnable {
+) {
+
+    var type: Type = Type.CLIENT
 
     private val reader: BufferedReader
     private val writer: BufferedWriter
     private val commands: MutableList<RedisCommand.Entry>
     private var transaction: Boolean = false
+    private val commandParser: RedisCommandParser
 
     init {
         socket.soTimeout = 30_000
         reader = socket.inputStream.bufferedReader()
         writer = socket.outputStream.bufferedWriter()
         commands = mutableListOf()
+        commandParser = RedisCommandParser(reader)
     }
 
-    override fun run() {
-        socket.use { _ ->
-            val commandParser = RedisCommandParser(reader)
-            val commandDispatcher = CommandDispatcher()
+    fun readCommand(): RedisValue = commandParser.parse()
 
-            while (true) {
-                val parsed = commandParser.parse()
-                val result = commandDispatcher.dispatch(this, parsed, dataStore)
-                writer.write(result.encodeValue())
-                writer.flush()
-            }
-        }
-    }
+    fun <T> useSocket(callback: () -> T): T = socket.use { callback() }
 
-    fun serverMetadata() : RedisServer.Metadata = serverMetadata
+    fun serverMetadata(): RedisServer.Metadata = serverMetadata
 
     fun isTransaction(): Boolean = transaction
 
@@ -58,14 +51,28 @@ class Session(
     }
 
     fun write(value: RedisValue) {
+        if (type == Type.REPLICA) {
+            return
+        }
+
         writer.write(value.encodeValue())
         writer.flush()
     }
 
-    fun wirte(bytes: ByteArray) {
+    fun propagate(value: RedisValue) {
+        writer.write(value.encodeValue())
+        writer.flush()
+    }
+
+    fun write(bytes: ByteArray) {
         writer.flush()
         socket.outputStream.write(bytes)
         socket.outputStream.flush()
+    }
+
+    enum class Type {
+        CLIENT,
+        REPLICA
     }
 }
 
