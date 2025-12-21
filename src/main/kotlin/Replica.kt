@@ -31,7 +31,12 @@ class Replica private constructor(
                 while (true) {
                     val command = session.receive()
                     val commandExecution = commandDispatcher.dispatch(session, command, dataStore)
-                    session.send(commandExecution.result)
+
+                    if (commandExecution.requiresAck) {
+                        session.send(commandExecution.result)
+                    }
+
+                    session.offset += command.encodeValue().length
                 }
             } catch (e: Exception) {
                 connection.close()

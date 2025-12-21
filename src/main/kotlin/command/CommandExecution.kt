@@ -9,4 +9,7 @@ data class CommandExecution(
 ) {
     val isReplicable: Boolean
         get() = command.isReplicable()
+
+    val requiresAck: Boolean
+        get() = command.requiresAck()
 }

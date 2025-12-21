@@ -7,6 +7,7 @@ class Session(
 ) {
 
     var type: Type = Type.CLIENT
+    var offset: Int = 0
 
     private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
     private var transaction: Boolean = false

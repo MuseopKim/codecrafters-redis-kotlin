@@ -2,6 +2,7 @@ package command;
 
 import Session
 import protocol.RedisValue
+import protocol.getBulkString
 import store.RedisDataStore
 
 class CommandDispatcher {
@@ -35,7 +36,12 @@ class CommandDispatcher {
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand
             "INFO" -> RedisCommand.INFOCommand
-            "REPLCONF" -> RedisCommand.REPLCONFCommand
+            "REPLCONF" -> {
+                when (arguments.getBulkString(0)?.value?.uppercase()) {
+                    "GETACK" -> RedisCommand.REPLCONFCommand.GETACKCommand
+                    else -> RedisCommand.REPLCONFCommand
+                }
+            }
             "PSYNC" -> RedisCommand.PSYNC
             else -> throw IllegalArgumentException("Unknown command")
         }

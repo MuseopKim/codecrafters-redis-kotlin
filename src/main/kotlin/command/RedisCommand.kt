@@ -7,7 +7,7 @@ import protocol.getBulkStrings
 import store.RedisDataStore
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
-import java.util.Base64
+import java.util.*
 import java.util.concurrent.TimeoutException
 
 sealed class RedisCommand {
@@ -28,6 +28,8 @@ sealed class RedisCommand {
     abstract fun execute(arguments: List<RedisValue>, store: RedisDataStore): RedisValue
 
     abstract fun isReplicable(): Boolean
+
+    open fun requiresAck(): Boolean = false
 
     object EchoCommand : RedisCommand() {
 
@@ -486,22 +488,49 @@ sealed class RedisCommand {
         override fun isReplicable() = false
 
         override fun execute(
+            session: Session,
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            val firstArgument = arguments.getBulkString(0)
-                ?: return RedisValue.SimpleString("OK")
+            return when (arguments.getBulkString(0)?.value) {
+                "GETACK" -> GETACKCommand.execute(session, arguments, store)
+                else -> return RedisValue.SimpleString("OK")
+            }
+        }
 
-            return when (firstArgument.value) {
-                "GETACK" -> return RedisValue.Array(
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("REPLCONF command with no session is not supported.")
+        }
+
+        object GETACKCommand : RedisCommand() {
+
+            override fun isReplicable(): Boolean = false
+
+            override fun requiresAck(): Boolean = true
+
+            override fun execute(
+                session: Session,
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                return RedisValue.Array(
                     listOf(
                         "REPLCONF",
                         "ACK",
-                        "0"
+                        session.offset.toString()
                     ).map { RedisValue.BulkString(it) })
-
-                else -> RedisValue.SimpleString("OK")
             }
+
+            override fun execute(
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                throw UnsupportedOperationException("REPLCONF GETACK command with no session is not supported.")
+            }
+
         }
     }
 
