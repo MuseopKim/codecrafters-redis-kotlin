@@ -1,36 +1,19 @@
 import command.RedisCommand
-import command.RedisCommandParser
 import protocol.RedisValue
-import store.RedisDataStore
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.net.Socket
 
 class Session(
     private val serverMetadata: RedisServer.Metadata,
-    private val socket: Socket,
-    private val dataStore: RedisDataStore
+    private val connection: RedisConnection
 ) {
 
     var type: Type = Type.CLIENT
 
-    private val reader: BufferedReader
-    private val writer: BufferedWriter
-    private val commands: MutableList<RedisCommand.Entry>
+    private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
     private var transaction: Boolean = false
-    private val commandParser: RedisCommandParser
 
-    init {
-        socket.soTimeout = 30_000
-        reader = socket.inputStream.bufferedReader()
-        writer = socket.outputStream.bufferedWriter()
-        commands = mutableListOf()
-        commandParser = RedisCommandParser(reader)
-    }
+    fun receive(): RedisValue = connection.receive().getOrThrow()
 
-    fun readCommand(): RedisValue = commandParser.parse()
-
-    fun <T> useSocket(callback: () -> T): T = socket.use { callback() }
+    fun <T> useSocket(callback: () -> T): T = connection.useSocket { callback() }
 
     fun serverMetadata(): RedisServer.Metadata = serverMetadata
 
@@ -50,24 +33,20 @@ class Session(
         return transaction
     }
 
-    fun write(value: RedisValue) {
+    fun send(value: RedisValue) {
         if (type == Type.REPLICA) {
             return
         }
 
-        writer.write(value.encodeValue())
-        writer.flush()
+        connection.send(value)
     }
 
     fun propagate(value: RedisValue) {
-        writer.write(value.encodeValue())
-        writer.flush()
+        connection.send(value)
     }
 
-    fun write(bytes: ByteArray) {
-        writer.flush()
-        socket.outputStream.write(bytes)
-        socket.outputStream.flush()
+    fun send(bytes: ByteArray) {
+        connection.send(bytes)
     }
 
     enum class Type {

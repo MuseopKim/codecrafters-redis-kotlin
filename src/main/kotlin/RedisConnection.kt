@@ -9,8 +9,8 @@ class RedisConnection(
     private val socket: Socket,
 ) : Closeable {
 
-    private val reader: BufferedReader = socket.inputStream.bufferedReader()
-    private val writer: BufferedWriter = socket.outputStream.bufferedWriter()
+    private val reader: BufferedReader = socket.inputStream.bufferedReader(Charsets.ISO_8859_1)
+    private val writer: BufferedWriter = socket.outputStream.bufferedWriter(Charsets.ISO_8859_1)
     private val respParser: RedisCommandParser = RedisCommandParser(reader)
 
     fun send(value: RedisValue) {
@@ -18,7 +18,33 @@ class RedisConnection(
         writer.flush()
     }
 
+    fun send(bytes: ByteArray) {
+        socket.outputStream.write(bytes)
+        socket.outputStream.flush()
+        writer.flush()
+    }
+
     fun receive(): Result<RedisValue> = runCatching { respParser.parse() }
+
+    fun skipRdb() {
+        val dollarSign = reader.read().toChar()
+        require(dollarSign == '$') { "Expected '$' but got '$dollarSign'" }
+
+        val lengthStr = StringBuilder()
+        while (true) {
+            val c = reader.read().toChar()
+            if (c == '\r') {
+                reader.read() // skip \n
+                break
+            }
+            lengthStr.append(c)
+        }
+
+        val length = lengthStr.toString().toInt()
+        repeat(length) { reader.read() }
+    }
+
+    fun <T> useSocket(callback: () -> T): T = socket.use { callback() }
 
     override fun close() {
         runCatching { socket.close() }

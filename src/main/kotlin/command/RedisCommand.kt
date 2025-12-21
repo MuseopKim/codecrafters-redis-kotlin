@@ -507,10 +507,10 @@ sealed class RedisCommand {
         ): RedisValue {
             val serverMetadata = session.serverMetadata()
 
-            session.write(RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}"))
+            session.send(RedisValue.SimpleString("FULLRESYNC ${serverMetadata.masterReplid} ${serverMetadata.masterReplOffset}"))
 
             val rdbHeader = "$${EMPTY_RDB.size}\r\n".toByteArray()
-            session.write(rdbHeader + EMPTY_RDB)
+            session.send(rdbHeader + EMPTY_RDB)
 
             return RedisValue.Empty
         }

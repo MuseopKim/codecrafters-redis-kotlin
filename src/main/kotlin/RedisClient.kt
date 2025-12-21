@@ -35,6 +35,8 @@ class RedisClient(private val connection: RedisConnection) {
 
         connection.receive()
 
+        connection.skipRdb()
+
         return Result.success(FullResyncInfo(replicationId, offset))
     }
 }

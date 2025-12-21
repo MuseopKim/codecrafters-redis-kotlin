@@ -11,9 +11,12 @@ class RedisServer(
 ) {
 
     fun run() {
+        val serverMetadata = Metadata(role = role)
+        val dataStore = RedisDataStore()
+
         if (role == Role.REPLICA) {
             Thread {
-                Replica.connect(port, masterHost, masterPort)
+                Replica.connect(port, masterHost, masterPort, dataStore, serverMetadata)
             }.start()
         }
 
@@ -25,12 +28,10 @@ class RedisServer(
             Role.REPLICA -> Replication.Disabled
         }
 
-        val serverMetadata = Metadata(role = role)
-        val dataStore = RedisDataStore()
-
         while (true) {
             val clientSocket = socket.accept()
-            val session = Session(serverMetadata, clientSocket, dataStore)
+            val connection = RedisConnection(clientSocket)
+            val session = Session(serverMetadata, connection)
             Thread(SessionHandler(session, dataStore, replication)).start()
         }
     }

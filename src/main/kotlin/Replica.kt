@@ -1,3 +1,6 @@
+import command.CommandDispatcher
+import store.RedisDataStore
+
 class Replica private constructor(
     private val port: Int,
     private val masterHost: String,
@@ -5,7 +8,13 @@ class Replica private constructor(
 ) {
 
     companion object {
-        fun connect(port: Int, masterHost: String, masterPort: Int): Result<Replica> = runCatching {
+        fun connect(
+            port: Int,
+            masterHost: String,
+            masterPort: Int,
+            dataStore: RedisDataStore,
+            serverMetadata: RedisServer.Metadata
+        ) = runCatching {
             val connection = RedisConnection.connect(masterHost, masterPort)
 
             try {
@@ -16,7 +25,14 @@ class Replica private constructor(
                 client.replconf("capa", "psync2").getOrThrow()
                 client.psync("?", -1)
 
-                return Result.success(Replica(port, masterHost, masterPort))
+                val session = Session(serverMetadata, connection)
+                session.type = Session.Type.REPLICA
+                val commandDispatcher = CommandDispatcher()
+                while (true) {
+                    val command = session.receive()
+                    val commandExecution = commandDispatcher.dispatch(session, command, dataStore)
+                    session.send(commandExecution.result)
+                }
             } catch (e: Exception) {
                 connection.close()
                 throw e

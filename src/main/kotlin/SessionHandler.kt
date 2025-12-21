@@ -13,11 +13,11 @@ class SessionHandler(
     override fun run() {
         session.useSocket {
             while (true) {
-                val command = session.readCommand()
+                val command = session.receive()
                 val commandExecution = commandDispatcher.dispatch(session, command, store)
                 val executedCommandResponse = commandExecution.result
 
-                session.write(executedCommandResponse)
+                session.send(executedCommandResponse)
 
                 replication.handlePostExecution(commandExecution, session)
             }
