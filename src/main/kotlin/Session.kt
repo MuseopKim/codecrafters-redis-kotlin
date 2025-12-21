@@ -34,10 +34,6 @@ class Session(
     }
 
     fun send(value: RedisValue) {
-        if (type == Type.REPLICA) {
-            return
-        }
-
         connection.send(value)
     }
 

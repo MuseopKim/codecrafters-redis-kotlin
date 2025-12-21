@@ -489,7 +489,19 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            return RedisValue.SimpleString("OK")
+            val firstArgument = arguments.getBulkString(0)
+                ?: return RedisValue.SimpleString("OK")
+
+            return when (firstArgument.value) {
+                "GETACK" -> return RedisValue.Array(
+                    listOf(
+                        "REPLCONF",
+                        "ACK",
+                        "0"
+                    ).map { RedisValue.BulkString(it) })
+
+                else -> RedisValue.SimpleString("OK")
+            }
         }
     }
 
