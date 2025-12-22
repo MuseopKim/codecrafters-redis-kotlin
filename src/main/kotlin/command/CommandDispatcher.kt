@@ -46,6 +46,7 @@ class CommandDispatcher {
 
             "PSYNC" -> RedisCommand.PSYNC
             "WAIT" -> RedisCommand.WAIT
+            "KEYS" -> RedisCommand.KEYSCommand
             "CONFIG" -> {
                 when (arguments.getBulkString(0)?.value?.uppercase()) {
                     "GET" -> RedisCommand.CONFIG.GET

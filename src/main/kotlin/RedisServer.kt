@@ -19,6 +19,10 @@ class RedisServer(
         rdbDir?.let { dataStore.set(type = Configs.Type.RDB_FILE_DIR, value = it) }
         rdbFileName?.let { dataStore.set(type = Configs.Type.RDB_FILE_NAME, value = it) }
 
+        if (rdbDir != null && rdbFileName != null) {
+            dataStore.loadRdb("$rdbDir/$rdbFileName")
+        }
+
         if (role == Role.REPLICA) {
             Thread {
                 Replica.connect(port, masterHost, masterPort, dataStore, serverMetadata)

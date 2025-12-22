@@ -3,6 +3,7 @@ package store
 import protocol.RedisDataType
 import store.config.Configs
 import store.lists.Lists
+import store.rdb.RdbParser
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
 import store.streams.Streams
@@ -126,6 +127,25 @@ class RedisDataStore {
 
     fun set(type: Configs.Type, value: String): Boolean {
         return configs.set(type, value)
+    }
+
+    fun keys(): Set<String> {
+        return strings.keys()
+    }
+
+    fun loadRdb(filePath: String) {
+        try {
+            val parser = RdbParser(filePath)
+            val keyValues = parser.parse()
+            System.err.println("[DEBUG] RDB loaded: $filePath, keys: ${keyValues.map { it.key }}")
+
+            keyValues.forEach { kv ->
+                strings.setWithAbsoluteExpiry(kv.key, kv.value, kv.expiresAt)
+            }
+        } catch (e: Exception) {
+            System.err.println("[DEBUG] RDB load error: ${e.message}")
+            e.printStackTrace(System.err)
+        }
     }
 
     fun <R> atomic(operation: () -> R): R {

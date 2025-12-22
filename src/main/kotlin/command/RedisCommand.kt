@@ -643,6 +643,19 @@ sealed class RedisCommand {
         }
     }
 
+    object KEYSCommand : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val keys = store.keys()
+            return RedisValue.Array(keys.map { RedisValue.BulkString(it) })
+        }
+    }
+
     object CONFIG {
 
         object GET : RedisCommand() {

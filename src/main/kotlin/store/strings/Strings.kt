@@ -15,6 +15,18 @@ class Strings(
         )
     }
 
+    fun setWithAbsoluteExpiry(key: String, value: String, expiresAt: Long?) {
+        entries[key] = Entry(value, expiresAt)
+    }
+
+    fun keys(): Set<String> {
+        val currentTime = System.currentTimeMillis()
+        return entries.keys.filter { key ->
+            val entry = entries[key]
+            entry != null && !entry.isExpired(currentTime)
+        }.toSet()
+    }
+
     fun get(key: String): String? {
         val currentTime = System.currentTimeMillis()
         val entry = entries[key] ?: return null
