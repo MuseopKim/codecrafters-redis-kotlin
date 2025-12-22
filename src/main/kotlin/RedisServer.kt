@@ -31,7 +31,7 @@ class RedisServer(
         while (true) {
             val clientSocket = socket.accept()
             val connection = RedisConnection(clientSocket)
-            val session = Session(serverMetadata, connection)
+            val session = Session(serverMetadata, connection, replication)
             Thread(SessionHandler(session, dataStore, replication)).start()
         }
     }

@@ -13,7 +13,7 @@ sealed interface Replication {
 
     fun registerReplica(session: Session)
 
-    fun replicaCount(): Int
+    fun replicaCount(): Long
 
     class Master : Replication {
 
@@ -49,7 +49,7 @@ sealed interface Replication {
             replicas.add(session)
         }
 
-        override fun replicaCount(): Int = replicas.size
+        override fun replicaCount(): Long = replicas.size.toLong()
     }
 
     object Disabled : Replication {
@@ -61,6 +61,6 @@ sealed interface Replication {
 
         override fun registerReplica(session: Session) = Unit
 
-        override fun replicaCount(): Int = 0
+        override fun replicaCount(): Long = 0
     }
 }

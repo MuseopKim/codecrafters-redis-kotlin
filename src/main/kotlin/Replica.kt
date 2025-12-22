@@ -1,4 +1,5 @@
 import command.CommandDispatcher
+import replication.Replication
 import store.RedisDataStore
 
 class Replica private constructor(
@@ -25,7 +26,7 @@ class Replica private constructor(
                 client.replconf("capa", "psync2").getOrThrow()
                 client.psync("?", -1)
 
-                val session = Session(serverMetadata, connection)
+                val session = Session(serverMetadata, connection, Replication.Disabled)
                 session.type = Session.Type.REPLICA
                 val commandDispatcher = CommandDispatcher()
                 while (true) {

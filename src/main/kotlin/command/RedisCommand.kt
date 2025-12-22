@@ -4,6 +4,7 @@ import Session
 import protocol.RedisValue
 import protocol.getBulkString
 import protocol.getBulkStrings
+import protocol.getInteger
 import store.RedisDataStore
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
@@ -573,7 +574,28 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            return RedisValue.Integer(0)
+            val numberOfReplicas = arguments.getBulkString(0)?.value?.toLong()
+                ?: return RedisValue.SimpleString("WAIT command without numreplicas.")
+
+            val timeoutMillis = arguments.getBulkString(1)?.value?.toLong()
+                ?: return RedisValue.SimpleString("WAIT command without timeout.")
+
+            val waitUntil = System.currentTimeMillis() + timeoutMillis
+
+            while (true) {
+                if (numberOfReplicas <= session.numberOfReplicas()) {
+                    break
+                }
+
+                val currentTimeMillis = System.currentTimeMillis()
+                if (waitUntil <= currentTimeMillis) {
+                    break
+                }
+
+                Thread.sleep(10)
+            }
+
+            return RedisValue.Integer(session.numberOfReplicas())
         }
 
         override fun execute(

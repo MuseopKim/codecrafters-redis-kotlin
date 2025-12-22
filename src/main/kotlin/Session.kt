@@ -1,9 +1,11 @@
 import command.RedisCommand
 import protocol.RedisValue
+import replication.Replication
 
 class Session(
     private val serverMetadata: RedisServer.Metadata,
-    private val connection: RedisConnection
+    private val connection: RedisConnection,
+    private val replication: Replication
 ) {
 
     var type: Type = Type.CLIENT
@@ -45,6 +47,8 @@ class Session(
     fun send(bytes: ByteArray) {
         connection.send(bytes)
     }
+
+    fun numberOfReplicas(): Long = replication.replicaCount()
 
     enum class Type {
         CLIENT,
