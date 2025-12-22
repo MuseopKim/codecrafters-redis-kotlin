@@ -42,7 +42,9 @@ class CommandDispatcher {
                     else -> RedisCommand.REPLCONFCommand
                 }
             }
+
             "PSYNC" -> RedisCommand.PSYNC
+            "WAIT" -> RedisCommand.WAIT
             else -> throw IllegalArgumentException("Unknown command")
         }
 

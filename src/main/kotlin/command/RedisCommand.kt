@@ -564,6 +564,26 @@ sealed class RedisCommand {
         }
     }
 
+    object WAIT : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            return RedisValue.Integer(0)
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("WAIT command with no session is not supported.")
+        }
+    }
+
     data class Entry(
         val command: RedisCommand,
         val arguments: List<RedisValue>
