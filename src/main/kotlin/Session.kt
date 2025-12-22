@@ -9,7 +9,7 @@ class Session(
 ) {
 
     var type: Type = Type.CLIENT
-    var offset: Int = 0
+    var offset: Long = 0
 
     private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
     private var transaction: Boolean = false
@@ -49,6 +49,12 @@ class Session(
     }
 
     fun numberOfReplicas(): Long = replication.replicaCount()
+
+    fun replicationOffset(): Long = replication.offset()
+
+    fun numberOfReplicasGreaterThanOrEqual(offset: Long): Long = replication.replicaCountGreaterThanOrEqual(offset)
+
+    fun replicasLessThan(offset: Long): List<Session> = replication.replicasLessThan(offset)
 
     enum class Type {
         CLIENT,

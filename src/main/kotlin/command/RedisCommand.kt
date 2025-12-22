@@ -4,7 +4,6 @@ import Session
 import protocol.RedisValue
 import protocol.getBulkString
 import protocol.getBulkStrings
-import protocol.getInteger
 import store.RedisDataStore
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
@@ -493,9 +492,10 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            return when (arguments.getBulkString(0)?.value) {
+            return when (arguments.getBulkString(0)?.value?.uppercase()) {
                 "GETACK" -> GETACKCommand.execute(session, arguments, store)
-                else -> return RedisValue.SimpleString("OK")
+                "ACK" -> ACKCommand.execute(session, arguments, store)
+                else -> RedisValue.SimpleString("OK")
             }
         }
 
@@ -533,6 +533,28 @@ sealed class RedisCommand {
             }
 
         }
+
+        object ACKCommand : RedisCommand() {
+
+            override fun isReplicable(): Boolean = false
+
+            override fun execute(
+                session: Session,
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                val replicaOffset = arguments.getBulkString(1)?.value?.toLongOrNull() ?: 0L
+                session.offset = replicaOffset
+                return RedisValue.Empty
+            }
+
+            override fun execute(
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                throw UnsupportedOperationException("REPLCONF command with no session is not supported.")
+            }
+        }
     }
 
     object PSYNC : RedisCommand() {
@@ -569,33 +591,51 @@ sealed class RedisCommand {
 
         override fun isReplicable(): Boolean = false
 
+        private val GETACK_COMMAND = RedisValue.Array(
+            listOf(
+                RedisValue.BulkString("REPLCONF"),
+                RedisValue.BulkString("GETACK"),
+                RedisValue.BulkString("*")
+            )
+        )
+
         override fun execute(
             session: Session,
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
+            val expectedOffset = session.replicationOffset()
+
             val numberOfReplicas = arguments.getBulkString(0)?.value?.toLong()
                 ?: return RedisValue.SimpleString("WAIT command without numreplicas.")
 
             val timeoutMillis = arguments.getBulkString(1)?.value?.toLong()
                 ?: return RedisValue.SimpleString("WAIT command without timeout.")
 
+            if (numberOfReplicas <= session.numberOfReplicasGreaterThanOrEqual(expectedOffset)) {
+                return RedisValue.Integer(session.numberOfReplicasGreaterThanOrEqual(expectedOffset))
+            }
+
+            session.replicasLessThan(expectedOffset).forEach {
+                it.send(GETACK_COMMAND)
+            }
+
             val waitUntil = System.currentTimeMillis() + timeoutMillis
 
             while (true) {
-                if (numberOfReplicas <= session.numberOfReplicas()) {
-                    break
+                val acknowledgedCount = session.numberOfReplicasGreaterThanOrEqual(expectedOffset)
+                if (numberOfReplicas <= acknowledgedCount) {
+                    return RedisValue.Integer(acknowledgedCount)
                 }
 
-                val currentTimeMillis = System.currentTimeMillis()
-                if (waitUntil <= currentTimeMillis) {
+                if (System.currentTimeMillis() >= waitUntil) {
                     break
                 }
 
                 Thread.sleep(10)
             }
 
-            return RedisValue.Integer(session.numberOfReplicas())
+            return RedisValue.Integer(session.numberOfReplicasGreaterThanOrEqual(expectedOffset))
         }
 
         override fun execute(

@@ -4,6 +4,8 @@ sealed class RedisValue {
 
     abstract fun encodeValue(): String
 
+    fun byteLength(): Long = encodeValue().length.toLong()
+
     class SimpleString(val value: String) : RedisValue() {
 
         override fun encodeValue(): String {

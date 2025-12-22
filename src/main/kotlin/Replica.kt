@@ -37,7 +37,7 @@ class Replica private constructor(
                         session.send(commandExecution.result)
                     }
 
-                    session.offset += command.encodeValue().length
+                    session.offset += command.byteLength()
                 }
             } catch (e: Exception) {
                 connection.close()

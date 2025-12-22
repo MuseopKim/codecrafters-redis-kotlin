@@ -15,9 +15,16 @@ sealed interface Replication {
 
     fun replicaCount(): Long
 
+    fun offset(): Long
+
+    fun replicaCountGreaterThanOrEqual(offset: Long): Long
+
+    fun replicasLessThan(offset: Long): List<Session>
+
     class Master : Replication {
 
         private val replicas = CopyOnWriteArrayList<Session>()
+        private var offset: Long = 0
 
         override fun handlePostExecution(
             commandExecution: CommandExecution,
@@ -35,6 +42,8 @@ sealed interface Replication {
                 return
             }
 
+            offset += commandExecution.rawCommand.byteLength()
+
             replicas.forEach { it ->
                 try {
                     it.propagate(commandExecution.rawCommand)
@@ -49,7 +58,17 @@ sealed interface Replication {
             replicas.add(session)
         }
 
+        override fun offset(): Long = offset
+
         override fun replicaCount(): Long = replicas.size.toLong()
+
+        override fun replicaCountGreaterThanOrEqual(greaterThanOffSet: Long): Long {
+            return replicas.count { it.offset >= greaterThanOffSet }.toLong()
+        }
+
+        override fun replicasLessThan(offset: Long): List<Session> {
+            return replicas.filter { it.offset < offset }
+        }
     }
 
     object Disabled : Replication {
@@ -62,5 +81,11 @@ sealed interface Replication {
         override fun registerReplica(session: Session) = Unit
 
         override fun replicaCount(): Long = 0
+
+        override fun offset(): Long = 0
+
+        override fun replicaCountGreaterThanOrEqual(offset: Long): Long = 0
+
+        override fun replicasLessThan(offset: Long): List<Session> = emptyList()
     }
 }
