@@ -39,6 +39,7 @@ class CommandDispatcher {
             "REPLCONF" -> {
                 when (arguments.getBulkString(0)?.value?.uppercase()) {
                     "GETACK" -> RedisCommand.REPLCONFCommand.GETACKCommand
+                    "ACK" -> RedisCommand.REPLCONFCommand.ACKCommand
                     else -> RedisCommand.REPLCONFCommand
                 }
             }

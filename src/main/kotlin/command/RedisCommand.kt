@@ -492,11 +492,7 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            return when (arguments.getBulkString(0)?.value?.uppercase()) {
-                "GETACK" -> GETACKCommand.execute(session, arguments, store)
-                "ACK" -> ACKCommand.execute(session, arguments, store)
-                else -> RedisValue.SimpleString("OK")
-            }
+            return RedisValue.SimpleString("OK")
         }
 
         override fun execute(
