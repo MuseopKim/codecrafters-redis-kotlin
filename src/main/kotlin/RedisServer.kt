@@ -1,5 +1,6 @@
 import replication.Replication
 import store.RedisDataStore
+import store.config.Configs
 import java.net.ServerSocket
 
 class RedisServer(
@@ -7,12 +8,16 @@ class RedisServer(
     private val port: Int,
     private val role: Role,
     private val masterHost: String,
-    private val masterPort: Int
+    private val masterPort: Int,
+    private val rdbDir: String?,
+    private val rdbFileName: String?
 ) {
 
     fun run() {
         val serverMetadata = Metadata(role = role)
         val dataStore = RedisDataStore()
+        rdbDir?.let { dataStore.set(type = Configs.Type.RDB_FILE_DIR, value = it) }
+        rdbFileName?.let { dataStore.set(type = Configs.Type.RDB_FILE_NAME, value = it) }
 
         if (role == Role.REPLICA) {
             Thread {

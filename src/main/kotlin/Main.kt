@@ -19,12 +19,19 @@ fun main(args: Array<String>) {
         listOf("localhost", port.toString())
     }
 
+    val rdbDirIndex = args.indexOfFirst { it == "--dir" }
+    val rdbDir = rdbDirIndex.takeIf { it != -1 }?.let { args[it + 1] }
+    val rdbFileNameIndex = args.indexOfFirst { it == "--dbfilename" }
+    val rdbFileName = rdbFileNameIndex.takeIf { it != -1 }?.let { args[it + 1] }
+
     val redisServer = RedisServer(
         host = "localhost",
         port = port,
         role = role,
         masterHost = masterHostPort[0],
-        masterPort = masterHostPort[1].toInt()
+        masterPort = masterHostPort[1].toInt(),
+        rdbDir = rdbDir,
+        rdbFileName = rdbFileName
     )
 
     redisServer.run()

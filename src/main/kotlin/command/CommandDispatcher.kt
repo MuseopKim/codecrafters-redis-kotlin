@@ -46,6 +46,13 @@ class CommandDispatcher {
 
             "PSYNC" -> RedisCommand.PSYNC
             "WAIT" -> RedisCommand.WAIT
+            "CONFIG" -> {
+                when (arguments.getBulkString(0)?.value?.uppercase()) {
+                    "GET" -> RedisCommand.CONFIG.GET
+                    else -> throw IllegalArgumentException("Unknown command")
+                }
+            }
+
             else -> throw IllegalArgumentException("Unknown command")
         }
 

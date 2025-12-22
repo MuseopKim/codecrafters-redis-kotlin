@@ -5,6 +5,7 @@ import protocol.RedisValue
 import protocol.getBulkString
 import protocol.getBulkStrings
 import store.RedisDataStore
+import store.config.Configs
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
 import java.util.*
@@ -639,6 +640,35 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             throw UnsupportedOperationException("WAIT command with no session is not supported.")
+        }
+    }
+
+    object CONFIG {
+
+        object GET : RedisCommand() {
+
+            override fun isReplicable(): Boolean = false
+
+            override fun execute(
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                val target = arguments.getBulkString(1)
+                    ?: return RedisValue.SimpleErrors("CONFIG GET command without aruguments.")
+
+                val value = when (target.value) {
+                    "dir" -> store.get(type = Configs.Type.RDB_FILE_DIR)
+                    "dbfilename" -> store.get(type = Configs.Type.RDB_FILE_NAME)
+                    else -> null
+                }
+
+                return RedisValue.Array(
+                    listOf(
+                        RedisValue.BulkString(target.value),
+                        RedisValue.BulkString(value ?: "")
+                    )
+                )
+            }
         }
     }
 

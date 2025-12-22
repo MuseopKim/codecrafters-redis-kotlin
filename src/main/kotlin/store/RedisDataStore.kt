@@ -1,6 +1,7 @@
 package store
 
 import protocol.RedisDataType
+import store.config.Configs
 import store.lists.Lists
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
@@ -22,6 +23,7 @@ class RedisDataStore {
         lists to RedisDataType.LIST,
         streams to RedisDataType.STREAM
     )
+    private val configs = Configs()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
@@ -116,6 +118,14 @@ class RedisDataStore {
 
     fun xread(query: StreamQuery): Map<String, List<Streams.Entry>>? {
         return streams.xread(query)
+    }
+
+    fun get(type: Configs.Type): String? {
+        return configs.get(type)
+    }
+
+    fun set(type: Configs.Type, value: String): Boolean {
+        return configs.set(type, value)
     }
 
     fun <R> atomic(operation: () -> R): R {
