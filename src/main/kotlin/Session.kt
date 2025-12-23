@@ -1,12 +1,14 @@
 import command.RedisCommand
 import protocol.RedisValue
 import replication.Replication
+import java.util.concurrent.ConcurrentHashMap
 
 class Session(
     private val serverMetadata: RedisServer.Metadata,
     private val connection: RedisConnection,
     private val replication: Replication
 ) {
+    private val subscribedChannels: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     var type: Type = Type.CLIENT
     var offset: Long = 0
@@ -31,6 +33,12 @@ class Session(
 
     fun clearCommands() = commands.clear()
 
+    fun addSubscribedChannel(channelName: String) {
+        subscribedChannels.add(channelName)
+    }
+
+    fun subscriptionChannelCount(): Long = subscribedChannels.size.toLong()
+
     fun transaction(transaction: Boolean): Boolean {
         this.transaction = transaction
         return transaction
@@ -52,7 +60,8 @@ class Session(
 
     fun replicationOffset(): Long = replication.offset()
 
-    fun numberOfReplicasGreaterThanOrEqual(offset: Long): Long = replication.replicaCountGreaterThanOrEqual(offset)
+    fun numberOfReplicasGreaterThanOrEqual(offset: Long): Long =
+        replication.replicaCountGreaterThanOrEqual(offset)
 
     fun replicasLessThan(offset: Long): List<Session> = replication.replicasLessThan(offset)
 

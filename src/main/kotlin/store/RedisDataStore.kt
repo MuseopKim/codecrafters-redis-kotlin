@@ -1,8 +1,10 @@
 package store
 
+import Session
 import protocol.RedisDataType
 import store.config.Configs
 import store.lists.Lists
+import store.pubsub.PubSub
 import store.rdb.RdbParser
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
@@ -25,6 +27,7 @@ class RedisDataStore {
         streams to RedisDataType.STREAM
     )
     private val configs = Configs()
+    private val pubsub: PubSub = PubSub()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
@@ -146,6 +149,10 @@ class RedisDataStore {
             System.err.println("[DEBUG] RDB load error: ${e.message}")
             e.printStackTrace(System.err)
         }
+    }
+
+    fun subscribe(session: Session, channelName: String) {
+        pubsub.subscribe(channelName, session)
     }
 
     fun <R> atomic(operation: () -> R): R {
