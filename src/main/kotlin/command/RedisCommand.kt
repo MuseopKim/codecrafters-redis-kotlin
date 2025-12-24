@@ -387,7 +387,7 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            session.transaction(true)
+            session.enter(Session.State.TRANSACTION)
             return execute(arguments, store)
         }
 
@@ -415,7 +415,7 @@ sealed class RedisCommand {
             val results = session.commands()
                 .map { it.command.execute(it.arguments, store) }
 
-            session.transaction(false)
+            session.enter(Session.State.NORMAL)
             session.clearCommands()
 
             return RedisValue.Array(results)
@@ -442,7 +442,7 @@ sealed class RedisCommand {
                 return RedisValue.SimpleErrors("ERR DISCARD without MULTI")
             }
 
-            session.transaction(false)
+            session.enter(Session.State.NORMAL)
             session.clearCommands()
 
             return RedisValue.SimpleString("OK")
@@ -699,6 +699,8 @@ sealed class RedisCommand {
 
             store.subscribe(session, channelName.value)
 
+            session.enter(Session.State.PUBSUB)
+
             return RedisValue.Array(
                 listOf(
                     RedisValue.BulkString("subscribe"),
@@ -713,6 +715,66 @@ sealed class RedisCommand {
             store: RedisDataStore
         ): RedisValue {
             throw UnsupportedOperationException("SUBSCRIBE command with no session is not supported.")
+        }
+    }
+
+    object UNSUBSCRIBE : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("not implemented")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("Not yet implemented")
+        }
+    }
+
+    object PSUBSCRIBE : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("not implemented")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("Not yet implemented")
+        }
+    }
+
+    object PUNSUBSCRIBE : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("not implemented")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            TODO("Not yet implemented")
         }
     }
 

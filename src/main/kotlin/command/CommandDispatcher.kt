@@ -7,6 +7,14 @@ import store.RedisDataStore
 
 class CommandDispatcher {
 
+    private val PUBSUB_ALLOWED = setOf(
+        RedisCommand.SUBSCRIBE,
+        RedisCommand.UNSUBSCRIBE,
+        RedisCommand.PSUBSCRIBE,
+        RedisCommand.PUNSUBSCRIBE,
+        RedisCommand.PingCommand
+    )
+
     fun dispatch(session: Session, value: RedisValue, store: RedisDataStore): CommandExecution {
         if (value !is RedisValue.Array) {
             throw IllegalArgumentException("The value is not a command.")
@@ -57,6 +65,14 @@ class CommandDispatcher {
             "SUBSCRIBE" -> RedisCommand.SUBSCRIBE
 
             else -> throw IllegalArgumentException("Unknown command")
+        }
+
+        if (session.isSubscribed() && !PUBSUB_ALLOWED.contains(redisCommand)) {
+            return CommandExecution(
+                result = RedisValue.SimpleErrors("ERR Can't execute '${commandName.value}'"),
+                rawCommand = value,
+                command = redisCommand
+            )
         }
 
         val commandResponse = redisCommand.execute(session, arguments, store)

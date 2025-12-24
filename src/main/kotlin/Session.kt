@@ -11,10 +11,10 @@ class Session(
     private val subscribedChannels: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     var type: Type = Type.CLIENT
+    private var state: State = State.NORMAL
     var offset: Long = 0
 
     private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
-    private var transaction: Boolean = false
 
     fun receive(): RedisValue = connection.receive().getOrThrow()
 
@@ -22,7 +22,7 @@ class Session(
 
     fun serverMetadata(): RedisServer.Metadata = serverMetadata
 
-    fun isTransaction(): Boolean = transaction
+    fun isTransaction(): Boolean = state == State.TRANSACTION
 
     fun addCommand(command: RedisCommand, arguments: List<RedisValue>): Int {
         this.commands.add(RedisCommand.Entry(command, arguments))
@@ -33,16 +33,17 @@ class Session(
 
     fun clearCommands() = commands.clear()
 
+    fun enter(state: State) {
+        this.state = state
+    }
+
+    fun isSubscribed() : Boolean = state == State.PUBSUB
+
     fun addSubscribedChannel(channelName: String) {
         subscribedChannels.add(channelName)
     }
 
     fun subscriptionChannelCount(): Long = subscribedChannels.size.toLong()
-
-    fun transaction(transaction: Boolean): Boolean {
-        this.transaction = transaction
-        return transaction
-    }
 
     fun send(value: RedisValue) {
         connection.send(value)
@@ -68,6 +69,12 @@ class Session(
     enum class Type {
         CLIENT,
         REPLICA
+    }
+
+    enum class State {
+        NORMAL,
+        TRANSACTION,
+        PUBSUB
     }
 }
 
