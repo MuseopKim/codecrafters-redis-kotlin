@@ -49,10 +49,27 @@ sealed class RedisCommand {
         override fun isReplicable() = false
 
         override fun execute(
+            session: Session,
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
+            if (session.isSubscribed()) {
+                return RedisValue.Array(
+                    listOf(
+                        RedisValue.BulkString("pong"),
+                        RedisValue.BulkString("")
+                    )
+                )
+            }
+
             return RedisValue.SimpleString("PONG")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("PING command with no session is not supported.")
         }
     }
 
