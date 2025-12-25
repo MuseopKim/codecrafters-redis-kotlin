@@ -155,6 +155,10 @@ class RedisDataStore {
         pubsub.subscribe(channelName, session)
     }
 
+    fun publish(channelName: String, message: String): Long {
+        return pubsub.publish(channelName, message)
+    }
+
     fun <R> atomic(operation: () -> R): R {
         lock.lock()
         return try {

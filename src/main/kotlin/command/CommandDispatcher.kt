@@ -63,6 +63,7 @@ class CommandDispatcher {
             }
 
             "SUBSCRIBE" -> RedisCommand.SUBSCRIBE
+            "PUBLISH" -> RedisCommand.PUBLISH
 
             else -> throw IllegalArgumentException("Unknown command")
         }

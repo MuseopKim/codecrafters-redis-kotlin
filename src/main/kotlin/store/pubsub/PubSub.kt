@@ -11,4 +11,9 @@ class PubSub(
         val channel = entries.computeIfAbsent(channelName) { Channel(channelName) }
         channel.addSubscriber(session)
     }
+
+    fun publish(channelName: String, message: String): Long {
+        val channel = entries[channelName] ?: return -1
+        return channel.publish(message)
+    }
 }

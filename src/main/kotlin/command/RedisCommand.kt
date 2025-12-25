@@ -795,6 +795,34 @@ sealed class RedisCommand {
         }
     }
 
+    object PUBLISH : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val channelName = arguments.getBulkString(0)
+                ?: return RedisValue.SimpleErrors("PUBLISH command without arguments.")
+
+            val message = arguments.getBulkString(1)
+                ?: return RedisValue.SimpleErrors("PUBLISH command without arguments.")
+
+            val subscribedCount = store.publish(channelName.value, message.value)
+
+            return RedisValue.Integer(subscribedCount)
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("PUBLISH command with no session is not supported.")
+        }
+    }
+
     data class Entry(
         val command: RedisCommand,
         val arguments: List<RedisValue>
