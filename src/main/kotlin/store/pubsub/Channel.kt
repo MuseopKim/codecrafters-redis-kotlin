@@ -15,7 +15,18 @@ class Channel(
     }
 
     fun publish(message: String): Long {
-        this.subscribers.forEach { it.send(RedisValue.BulkString(message)) }
+        this.subscribers.forEach {
+            it.send(
+                RedisValue.Array(
+                    listOf(
+                        RedisValue.BulkString("message"),
+                        RedisValue.BulkString(this.name),
+                        RedisValue.BulkString(message)
+                    )
+                )
+            )
+        }
+
         return subscribers.size.toLong()
     }
 }

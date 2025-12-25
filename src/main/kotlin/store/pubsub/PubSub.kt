@@ -13,7 +13,7 @@ class PubSub(
     }
 
     fun publish(channelName: String, message: String): Long {
-        val channel = entries[channelName] ?: return -1
+        val channel = entries[channelName] ?: return 0
         return channel.publish(message)
     }
 }
