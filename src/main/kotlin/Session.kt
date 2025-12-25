@@ -37,10 +37,18 @@ class Session(
         this.state = state
     }
 
-    fun isSubscribed() : Boolean = state == State.PUBSUB
+    fun isSubscribed(): Boolean = state == State.PUBSUB
 
-    fun addSubscribedChannel(channelName: String) {
+    fun subscribeChannel(channelName: String) {
         subscribedChannels.add(channelName)
+    }
+
+    fun unsubscribeChannel(channelName: String) {
+        subscribedChannels.remove(channelName)
+
+        if (subscribedChannels.isEmpty()) {
+            this.state = State.NORMAL
+        }
     }
 
     fun subscriptionChannelCount(): Long = subscribedChannels.size.toLong()

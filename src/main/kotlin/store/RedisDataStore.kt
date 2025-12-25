@@ -155,6 +155,10 @@ class RedisDataStore {
         pubsub.subscribe(channelName, session)
     }
 
+    fun unsubscribe(session: Session, channelName: String) {
+        pubsub.unsubscribe(channelName, session)
+    }
+
     fun publish(channelName: String, message: String): Long {
         return pubsub.publish(channelName, message)
     }

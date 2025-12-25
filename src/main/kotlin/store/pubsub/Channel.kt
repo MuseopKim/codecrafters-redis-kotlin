@@ -11,7 +11,12 @@ class Channel(
 
     fun addSubscriber(session: Session) {
         this.subscribers.add(session)
-        session.addSubscribedChannel(name)
+        session.subscribeChannel(name)
+    }
+
+    fun removeSubscriber(session: Session) {
+        this.subscribers.remove(session)
+        session.unsubscribeChannel(name)
     }
 
     fun publish(message: String): Long {

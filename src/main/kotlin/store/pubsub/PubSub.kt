@@ -12,6 +12,11 @@ class PubSub(
         channel.addSubscriber(session)
     }
 
+    fun unsubscribe(channelName: String, session: Session) {
+        val channel = entries[channelName] ?: return
+        channel.removeSubscriber(session)
+    }
+
     fun publish(channelName: String, message: String): Long {
         val channel = entries[channelName] ?: return 0
         return channel.publish(message)

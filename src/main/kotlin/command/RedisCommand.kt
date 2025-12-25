@@ -744,14 +744,25 @@ sealed class RedisCommand {
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            TODO("not implemented")
+            val channelName = (arguments.getBulkString(0)
+                ?: return RedisValue.SimpleErrors("UNSUBSCRIBE command without arguments."))
+
+            store.unsubscribe(session, channelName.value)
+
+            return RedisValue.Array(
+                listOf(
+                    RedisValue.BulkString("unsubscribe"),
+                    RedisValue.BulkString(channelName.value),
+                    RedisValue.Integer(session.subscriptionChannelCount())
+                )
+            )
         }
 
         override fun execute(
             arguments: List<RedisValue>,
             store: RedisDataStore
         ): RedisValue {
-            TODO("Not yet implemented")
+            throw UnsupportedOperationException("UNSUBSCRIBE command with no session is not supported.")
         }
     }
 
