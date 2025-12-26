@@ -3,6 +3,7 @@ package store.sortedsets
 import store.KeyStore
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListMap
+import kotlin.math.max
 
 class SortedSets(
     private val entries: MutableMap<String, SortedSet> = mutableMapOf()
@@ -68,16 +69,32 @@ class SortedSet(
     }
 
     fun range(start: Long, end: Long): List<Entry> {
+        fun normalizeIndex(index: Long, length: Long): Long {
+            if (index >= 0) {
+                return index
+            }
+
+            val normalizedIndex = length + index
+
+            return max(0, normalizedIndex)
+        }
+
+        val normalizedStart = normalizeIndex(start, scores.size.toLong())
+        val normalizedEnd = normalizeIndex(end, scores.size.toLong())
+
         val entriesInRange = mutableListOf<Entry>()
 
         var index = 0L
         for ((_, entries) in members.entries) {
             for ((_, entry) in entries) {
-                if (start <= index && index <= end) {
+                if (normalizedStart <= index && index <= normalizedEnd) {
                     entriesInRange.add(entry)
                 }
 
                 index++
+                if (index > normalizedEnd) {
+                    break
+                }
             }
         }
 
