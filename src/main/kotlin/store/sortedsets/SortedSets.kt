@@ -19,6 +19,11 @@ class SortedSets(
         return entries[setName]?.rank(memberName)
     }
 
+    fun zrange(setName: String, start: Long, end: Long): List<SortedSet.Entry> {
+        val sortedSet = entries[setName] ?: return emptyList()
+        return sortedSet.range(start, end)
+    }
+
     override fun contains(key: String): Boolean = key in entries
 }
 
@@ -60,6 +65,23 @@ class SortedSet(
         rank += members[scores[key]]!!.values.indexOfFirst { it.key == key }
 
         return rank
+    }
+
+    fun range(start: Long, end: Long): List<Entry> {
+        val entriesInRange = mutableListOf<Entry>()
+
+        var index = 0L
+        for ((_, entries) in members.entries) {
+            for ((_, entry) in entries) {
+                if (start <= index && index <= end) {
+                    entriesInRange.add(entry)
+                }
+
+                index++
+            }
+        }
+
+        return entriesInRange
     }
 
     private fun removeEntry(key: String, score: Double) {

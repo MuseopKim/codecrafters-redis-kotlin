@@ -136,6 +136,10 @@ class RedisDataStore {
         return sortedSets.zrank(setName, memberName)
     }
 
+    fun zrange(setName: String, start: Long, end: Long): List<SortedSet.Entry> {
+        return sortedSets.zrange(setName, start, end)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }
