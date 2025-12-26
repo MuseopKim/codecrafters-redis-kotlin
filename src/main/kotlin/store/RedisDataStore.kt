@@ -140,6 +140,10 @@ class RedisDataStore {
         return sortedSets.zrange(setName, start, end)
     }
 
+    fun zcard(setName: String): Long {
+        return sortedSets.zcard(setName)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }

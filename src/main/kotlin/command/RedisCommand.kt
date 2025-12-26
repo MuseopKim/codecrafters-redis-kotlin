@@ -462,6 +462,23 @@ sealed class RedisCommand {
         }
     }
 
+    object ZCARD : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val count = store.zcard(setName)
+
+            return RedisValue.Integer(count)
+        }
+    }
+
     object MULTICommand : RedisCommand() {
 
         override fun isReplicable() = false

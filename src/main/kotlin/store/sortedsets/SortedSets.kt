@@ -25,6 +25,10 @@ class SortedSets(
         return sortedSet.range(start, end)
     }
 
+    fun zcard(setName: String): Long {
+        return entries[setName]?.size() ?: 0L
+    }
+
     override fun contains(key: String): Boolean = key in entries
 }
 
