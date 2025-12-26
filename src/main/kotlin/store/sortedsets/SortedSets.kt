@@ -1,6 +1,7 @@
 package store.sortedsets
 
 import store.KeyStore
+import java.util.*
 import java.util.concurrent.ConcurrentSkipListMap
 
 class SortedSets(
@@ -14,12 +15,16 @@ class SortedSets(
         return count
     }
 
+    fun zrank(setName: String, memberName: String): Long? {
+        return entries[setName]?.rank(memberName)
+    }
+
     override fun contains(key: String): Boolean = key in entries
 }
 
 class SortedSet(
     private val scores: MutableMap<String, Double> = mutableMapOf(),
-    private val members: ConcurrentSkipListMap<Double, MutableSet<Entry>> = ConcurrentSkipListMap()
+    private val members: ConcurrentSkipListMap<Double, TreeMap<String, Entry>> = ConcurrentSkipListMap()
 ) {
 
     fun add(key: String, score: Double): Long {
@@ -38,14 +43,33 @@ class SortedSet(
         }
     }
 
+    fun rank(key: String): Long? {
+        if (key !in scores) {
+            return null
+        }
+
+        var rank = 0L
+        for ((score, scoreEntries) in members.entries) {
+            if (scores[key] == score) {
+                break
+            }
+
+            rank += scoreEntries.size.toLong()
+        }
+
+        rank += members[scores[key]]!!.values.indexOfFirst { it.key == key }
+
+        return rank
+    }
+
     private fun removeEntry(key: String, score: Double) {
         scores.remove(key)
-        members[score]?.removeIf { entry -> entry.key == key }
+        members[score]?.remove(key)
     }
 
     private fun addEntry(key: String, score: Double) {
         scores[key] = score
-        members.getOrPut(score) { mutableSetOf() }.add(Entry(score, key))
+        members.getOrPut(score) { TreeMap() }.put(key, Entry(score, key))
     }
 
     fun size(): Long = scores.size.toLong()

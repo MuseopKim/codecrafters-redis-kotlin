@@ -132,6 +132,10 @@ class RedisDataStore {
         return sortedSets.zadd(setName, score, memberName)
     }
 
+    fun zrank(setName: String, memberName: String): Long? {
+        return sortedSets.zrank(setName, memberName)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }
