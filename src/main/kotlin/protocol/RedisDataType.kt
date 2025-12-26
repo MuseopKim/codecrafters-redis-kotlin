@@ -5,6 +5,7 @@ enum class RedisDataType(
 ) {
     STRING("string"),
     LIST("list"),
+    SORTED_SET("sorted_set"),
     SET("set"),
     ZSET("zset"),
     HASH("hash"),

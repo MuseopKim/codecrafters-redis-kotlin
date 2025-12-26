@@ -6,6 +6,8 @@ import store.config.Configs
 import store.lists.Lists
 import store.pubsub.PubSub
 import store.rdb.RdbParser
+import store.sortedsets.SortedSet
+import store.sortedsets.SortedSets
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
 import store.streams.Streams
@@ -21,9 +23,11 @@ class RedisDataStore {
     private val strings = Strings()
     private val streams = Streams()
     private val lists = Lists()
+    private val sortedSets = SortedSets()
     private val keyStores = listOf(
         strings to RedisDataType.STRING,
         lists to RedisDataType.LIST,
+        sortedSets to RedisDataType.SORTED_SET,
         streams to RedisDataType.STREAM
     )
     private val configs = Configs()
@@ -122,6 +126,10 @@ class RedisDataStore {
 
     fun xread(query: StreamQuery): Map<String, List<Streams.Entry>>? {
         return streams.xread(query)
+    }
+
+    fun zadd(setName: String, score: Double, memberName: String): Long {
+        return sortedSets.zadd(setName, score, memberName)
     }
 
     fun get(type: Configs.Type): String? {

@@ -395,6 +395,29 @@ sealed class RedisCommand {
         }
     }
 
+    object ZADD : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val score = arguments.getBulkString(1)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName = arguments.getBulkString(2)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val count = store.zadd(setName, score, memberName)
+
+            return RedisValue.Integer(count)
+        }
+    }
+
     object MULTICommand : RedisCommand() {
 
         override fun isReplicable() = false

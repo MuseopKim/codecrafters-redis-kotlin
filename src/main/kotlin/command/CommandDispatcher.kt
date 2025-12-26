@@ -40,6 +40,7 @@ class CommandDispatcher {
             "XADD" -> RedisCommand.XADDCommand
             "XRANGE" -> RedisCommand.XRANGECommand
             "XREAD" -> RedisCommand.XREADCommand
+            "ZADD" -> RedisCommand.ZADD
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand
