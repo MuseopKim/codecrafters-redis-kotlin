@@ -1,6 +1,11 @@
 package store.geo
 
+import kotlin.math.*
+
 object GeoHash {
+    private const val EARTH_RADIUS_METERS = 6372797.560856
+    private const val DEG_TO_RAD = PI / 180.0
+
     private const val MIN_LATITUDE = -85.05112878
     private const val MAX_LATITUDE = 85.05112878
     private const val MIN_LONGITUDE = -180.0
@@ -59,5 +64,22 @@ object GeoHash {
         x = (x or (x shr 8)) and 0x0000FFFF0000FFFFL
         x = (x or (x shr 16)) and 0x00000000FFFFFFFFL
         return x
+    }
+
+    fun distance(longitude1: Double, latitude1: Double, longitude2: Double, latitude2: Double): Double {
+        val latitude1Radians = latitude1 * DEG_TO_RAD
+        val latitude2Radians = latitude2 * DEG_TO_RAD
+        val longitude1Radians = longitude1 * DEG_TO_RAD
+        val longitude2Radians = longitude2 * DEG_TO_RAD
+
+        val latitudeDifferenceHalf = sin((latitude2Radians - latitude1Radians) / 2)
+        val longitudeDifferenceHalf = sin((longitude2Radians - longitude1Radians) / 2)
+
+        val haversineOfCentralAngle =
+            latitudeDifferenceHalf * latitudeDifferenceHalf +
+            cos(latitude1Radians) * cos(latitude2Radians) *
+            longitudeDifferenceHalf * longitudeDifferenceHalf
+
+        return EARTH_RADIUS_METERS * 2 * asin(sqrt(haversineOfCentralAngle))
     }
 }

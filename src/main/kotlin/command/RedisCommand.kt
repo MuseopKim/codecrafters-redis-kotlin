@@ -640,6 +640,35 @@ sealed class RedisCommand {
         }
     }
 
+    object GEODIST : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName1 = arguments.getBulkString(1)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName2 = arguments.getBulkString(2)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val geoHash1 = store.zscore(setName, memberName1) ?: return RedisValue.NullBulkString
+            val geoHash2 = store.zscore(setName, memberName2) ?: return RedisValue.NullBulkString
+
+            val (longitude1, latitude1) = GeoHash.decode(geoHash1)
+            val (longitude2, latitude2) = GeoHash.decode(geoHash2)
+
+            val distance = GeoHash.distance(longitude1, latitude1, longitude2, latitude2)
+
+            return RedisValue.BulkString(distance.toString())
+        }
+    }
+
     object EXECCommand : RedisCommand() {
 
         override fun isReplicable() = false
