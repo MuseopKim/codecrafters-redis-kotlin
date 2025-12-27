@@ -47,6 +47,7 @@ class CommandDispatcher {
             "ZSCORE" -> RedisCommand.ZSCORE
             "ZREM" -> RedisCommand.ZREM
             "GEOADD" -> RedisCommand.GEOADD
+            "GEOPOS" -> RedisCommand.GEOPOS
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand

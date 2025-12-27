@@ -599,6 +599,45 @@ sealed class RedisCommand {
         }
     }
 
+    object GEOPOS : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberNames = arguments.getBulkStrings(skip = 1)
+            if (memberNames.isEmpty()) {
+                return RedisValue.SimpleErrors("Invalid arguments.")
+            }
+
+            val positions = mutableListOf<RedisValue>()
+            for (memberName in memberNames) {
+                val encodedPosition = store.zscore(setName, memberName.value)
+
+                if (encodedPosition == null) {
+                    positions.add(RedisValue.NullArray())
+                    continue
+                }
+
+                positions.add(
+                    RedisValue.Array(
+                        listOf(
+                            RedisValue.BulkString("0"),
+                            RedisValue.BulkString("0")
+                        )
+                    )
+                )
+            }
+
+            return RedisValue.Array(positions)
+        }
+    }
+
     object EXECCommand : RedisCommand() {
 
         override fun isReplicable() = false
