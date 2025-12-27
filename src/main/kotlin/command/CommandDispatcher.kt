@@ -44,6 +44,7 @@ class CommandDispatcher {
             "ZRANK" -> RedisCommand.ZRANK
             "ZRANGE" -> RedisCommand.ZRANGE
             "ZCARD" -> RedisCommand.ZCARD
+            "ZSCORE" -> RedisCommand.ZSCORE
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand

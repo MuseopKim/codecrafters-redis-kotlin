@@ -144,6 +144,10 @@ class RedisDataStore {
         return sortedSets.zcard(setName)
     }
 
+    fun zscore(setName: String, memberName: String): Double? {
+        return sortedSets.zscore(setName, memberName)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }

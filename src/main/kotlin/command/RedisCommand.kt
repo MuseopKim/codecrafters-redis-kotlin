@@ -500,6 +500,26 @@ sealed class RedisCommand {
         }
     }
 
+    object ZSCORE : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName = arguments.getBulkString(1)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val score = store.zscore(setName, memberName)
+
+            return score?.let { RedisValue.BulkString(it.toString()) } ?: RedisValue.NullBulkString
+        }
+    }
+
     object EXECCommand : RedisCommand() {
 
         override fun isReplicable() = false

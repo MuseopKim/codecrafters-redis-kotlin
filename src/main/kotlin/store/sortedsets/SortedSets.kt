@@ -29,6 +29,10 @@ class SortedSets(
         return entries[setName]?.size() ?: 0L
     }
 
+    fun zscore(setName: String, memberName: String): Double? {
+        return entries[setName]?.score(memberName)
+    }
+
     override fun contains(key: String): Boolean = key in entries
 }
 
@@ -116,6 +120,10 @@ class SortedSet(
     }
 
     fun size(): Long = scores.size.toLong()
+
+    fun score(key: String): Double? {
+        return scores[key]
+    }
 
     data class Entry(
         val score: Double,
