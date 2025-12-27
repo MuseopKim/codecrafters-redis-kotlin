@@ -543,6 +543,11 @@ sealed class RedisCommand {
 
     object GEOADD : RedisCommand() {
 
+        private const val MINIMUM_LONGITUDE = -180.0
+        private const val MAXIMUM_LONGITUDE = 180.0
+        private const val MINIMUM_LATITUDE = -85.05112878
+        private const val MAXIMUM_LATITUDE = 85.05112878
+
         override fun isReplicable() = false
 
         override fun execute(
@@ -557,6 +562,24 @@ sealed class RedisCommand {
 
             val latitude = arguments.getBulkString(2)?.value?.toDoubleOrNull()
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val validLongitude = longitude in MINIMUM_LONGITUDE..MAXIMUM_LONGITUDE
+            val validLatitude = latitude in MINIMUM_LATITUDE..MAXIMUM_LATITUDE
+
+            val format: (Double) -> String = { "%.6f".format(it) }
+
+            val error = when {
+                !validLongitude && !validLatitude
+                    -> "ERR invalid longitude,latitude pair ${format(longitude)},${format(latitude)}"
+
+                !validLongitude -> "ERR longitude value ${format(longitude)} is invalid"
+                !validLatitude -> "ERR latitude value ${format(latitude)} is invalid"
+                else -> null
+            }
+
+            if (!error.isNullOrEmpty()) {
+                return RedisValue.SimpleErrors(error)
+            }
 
             val memberName = arguments.getBulkString(3)?.value
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
