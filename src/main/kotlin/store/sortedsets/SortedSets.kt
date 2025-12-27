@@ -33,6 +33,10 @@ class SortedSets(
         return entries[setName]?.score(memberName)
     }
 
+    fun zrem(setName: String, memberName: String): Long {
+        return entries[setName]?.remove(memberName) ?: 0L
+    }
+
     override fun contains(key: String): Boolean = key in entries
 }
 
@@ -107,6 +111,18 @@ class SortedSet(
         }
 
         return entriesInRange
+    }
+
+    fun remove(key: String): Long {
+        if (key !in scores) {
+            return 0
+        }
+
+        val score = scores[key]
+
+        removeEntry(key, score!!)
+
+        return 1
     }
 
     private fun removeEntry(key: String, score: Double) {

@@ -148,6 +148,10 @@ class RedisDataStore {
         return sortedSets.zscore(setName, memberName)
     }
 
+    fun zrem(setName: String, memberName: String): Long {
+        return sortedSets.zrem(setName, memberName)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }

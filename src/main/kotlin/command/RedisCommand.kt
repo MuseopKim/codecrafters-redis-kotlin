@@ -520,6 +520,26 @@ sealed class RedisCommand {
         }
     }
 
+    object ZREM : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName = arguments.getBulkString(1)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val removedCount = store.zrem(setName, memberName)
+
+            return RedisValue.Integer(removedCount)
+        }
+    }
+
     object EXECCommand : RedisCommand() {
 
         override fun isReplicable() = false
