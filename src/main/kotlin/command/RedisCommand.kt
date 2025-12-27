@@ -669,6 +669,41 @@ sealed class RedisCommand {
         }
     }
 
+    object GEOSEARCH : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val searchMode = arguments.getBulkString(1)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val longitude = arguments.getBulkString(2)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val latitude = arguments.getBulkString(3)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val searchOption = arguments.getBulkString(4)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val radius = arguments.getBulkString(5)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val unit = arguments.getBulkString(6)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val locations = store.geosearch(setName, longitude, latitude, radius, unit)
+
+            return RedisValue.Array(locations.map { RedisValue.BulkString(it.key) })
+        }
+    }
+
     object EXECCommand : RedisCommand() {
 
         override fun isReplicable() = false

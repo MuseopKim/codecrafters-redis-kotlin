@@ -1,6 +1,7 @@
 package store.sortedsets
 
 import store.KeyStore
+import store.geo.GeoHash
 import java.util.*
 import java.util.concurrent.ConcurrentSkipListMap
 import kotlin.math.max
@@ -35,6 +36,24 @@ class SortedSets(
 
     fun zrem(setName: String, memberName: String): Long {
         return entries[setName]?.remove(memberName) ?: 0L
+    }
+
+    fun geosearch(
+        setName: String,
+        longitude: Double,
+        latitude: Double,
+        radius: Double,
+        unit: String
+    ): List<SortedSet.Entry> {
+        val radiusMeters = when (unit.lowercase()) {
+            "m" -> radius
+            "km" -> radius * 1000
+            "mi" -> radius * 1609
+            else -> radius
+        }
+
+        return entries[setName]?.search(longitude, latitude, radiusMeters)
+            ?: emptyList()
     }
 
     override fun contains(key: String): Boolean = key in entries
@@ -139,6 +158,20 @@ class SortedSet(
 
     fun score(key: String): Double? {
         return scores[key]
+    }
+
+    fun search(longitude: Double, latitude: Double, radiusMeters: Double): List<Entry> {
+        val geoHash1 = GeoHash.encode(longitude, latitude)
+
+        val locations = mutableListOf<Entry>()
+        for ((key, geoHash2) in scores) {
+            val distance = GeoHash.distance(geoHash1, geoHash2)
+            if (distance <= radiusMeters) {
+                locations.add(Entry(geoHash2, key))
+            }
+        }
+
+        return locations
     }
 
     data class Entry(

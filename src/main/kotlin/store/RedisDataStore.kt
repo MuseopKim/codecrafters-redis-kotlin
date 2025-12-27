@@ -152,6 +152,16 @@ class RedisDataStore {
         return sortedSets.zrem(setName, memberName)
     }
 
+    fun geosearch(
+        setName: String,
+        longitude: Double,
+        latitude: Double,
+        radius: Double,
+        unit: String
+    ): List<SortedSet.Entry> {
+        return sortedSets.geosearch(setName, longitude, latitude, radius, unit)
+    }
+
     fun get(type: Configs.Type): String? {
         return configs.get(type)
     }

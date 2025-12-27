@@ -49,6 +49,7 @@ class CommandDispatcher {
             "GEOADD" -> RedisCommand.GEOADD
             "GEOPOS" -> RedisCommand.GEOPOS
             "GEODIST" -> RedisCommand.GEODIST
+            "GEOSEARCH" -> RedisCommand.GEOSEARCH
             "MULTI" -> RedisCommand.MULTICommand
             "EXEC" -> RedisCommand.EXECCommand
             "DISCARD" -> RedisCommand.DISCARDCommand

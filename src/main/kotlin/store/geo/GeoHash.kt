@@ -16,7 +16,8 @@ object GeoHash {
 
     fun encode(longitude: Double, latitude: Double): Double {
         val normalizedLatitude = ((1L shl 26) * (latitude - MIN_LATITUDE) / LATITUDE_RANGE).toLong()
-        val normalizedLongitude = ((1L shl 26) * (longitude - MIN_LONGITUDE) / LONGITUDE_RANGE).toLong()
+        val normalizedLongitude =
+            ((1L shl 26) * (longitude - MIN_LONGITUDE) / LONGITUDE_RANGE).toLong()
 
         val spreadLatitude = spread(normalizedLatitude)
         val spreadLongitude = spread(normalizedLongitude)
@@ -50,7 +51,8 @@ object GeoHash {
         val latitude = (minLatitude + maxLatitude) / 2
 
         val minimumLongitude = MIN_LONGITUDE + LONGITUDE_RANGE * normalizedLongitude / (1L shl 26)
-        val maximumLongitude = MIN_LONGITUDE + LONGITUDE_RANGE * (normalizedLongitude + 1) / (1L shl 26)
+        val maximumLongitude =
+            MIN_LONGITUDE + LONGITUDE_RANGE * (normalizedLongitude + 1) / (1L shl 26)
         val longitude = (minimumLongitude + maximumLongitude) / 2
 
         return Pair(longitude, latitude)
@@ -66,7 +68,12 @@ object GeoHash {
         return x
     }
 
-    fun distance(longitude1: Double, latitude1: Double, longitude2: Double, latitude2: Double): Double {
+    fun distance(
+        longitude1: Double,
+        latitude1: Double,
+        longitude2: Double,
+        latitude2: Double
+    ): Double {
         val latitude1Radians = latitude1 * DEG_TO_RAD
         val latitude2Radians = latitude2 * DEG_TO_RAD
         val longitude1Radians = longitude1 * DEG_TO_RAD
@@ -77,9 +84,16 @@ object GeoHash {
 
         val haversineOfCentralAngle =
             latitudeDifferenceHalf * latitudeDifferenceHalf +
-            cos(latitude1Radians) * cos(latitude2Radians) *
-            longitudeDifferenceHalf * longitudeDifferenceHalf
+                    cos(latitude1Radians) * cos(latitude2Radians) *
+                    longitudeDifferenceHalf * longitudeDifferenceHalf
 
         return EARTH_RADIUS_METERS * 2 * asin(sqrt(haversineOfCentralAngle))
+    }
+
+    fun distance(geoHash1: Double, geoHash2: Double): Double {
+        val (longitude1, latitude1) = decode(geoHash1)
+        val (longitude2, latitude2) = decode(geoHash2)
+
+        return distance(longitude1, latitude1, longitude2, latitude2)
     }
 }
