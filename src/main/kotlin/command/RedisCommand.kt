@@ -6,6 +6,7 @@ import protocol.getBulkString
 import protocol.getBulkStrings
 import store.RedisDataStore
 import store.config.Configs
+import store.geo.GeoHash
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
 import java.util.*
@@ -537,6 +538,34 @@ sealed class RedisCommand {
             val removedCount = store.zrem(setName, memberName)
 
             return RedisValue.Integer(removedCount)
+        }
+    }
+
+    object GEOADD : RedisCommand() {
+
+        override fun isReplicable() = false
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val setName = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val longitude = arguments.getBulkString(1)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val latitude = arguments.getBulkString(2)?.value?.toDoubleOrNull()
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val memberName = arguments.getBulkString(3)?.value
+                ?: return RedisValue.SimpleErrors("Invalid arguments.")
+
+            val geoHash = GeoHash.encode(longitude, latitude)
+
+            val addedCount = store.zadd(setName, geoHash, memberName)
+
+            return RedisValue.Integer(addedCount)
         }
     }
 
