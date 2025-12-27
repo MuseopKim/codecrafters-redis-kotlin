@@ -30,4 +30,34 @@ object GeoHash {
         x = (x or (x shl 1)) and 0x5555555555555555L
         return x
     }
+
+    fun decode(hash: Double): Pair<Double, Double> {
+        val hashLong = hash.toLong()
+
+        val latitudeSpread = hashLong
+        val longitudeSpread = hashLong shr 1
+
+        val normalizedLatitude = compact(latitudeSpread)
+        val normalizedLongitude = compact(longitudeSpread)
+
+        val minLatitude = MIN_LATITUDE + LATITUDE_RANGE * normalizedLatitude / (1L shl 26)
+        val maxLatitude = MIN_LATITUDE + LATITUDE_RANGE * (normalizedLatitude + 1) / (1L shl 26)
+        val latitude = (minLatitude + maxLatitude) / 2
+
+        val minimumLongitude = MIN_LONGITUDE + LONGITUDE_RANGE * normalizedLongitude / (1L shl 26)
+        val maximumLongitude = MIN_LONGITUDE + LONGITUDE_RANGE * (normalizedLongitude + 1) / (1L shl 26)
+        val longitude = (minimumLongitude + maximumLongitude) / 2
+
+        return Pair(longitude, latitude)
+    }
+
+    private fun compact(v: Long): Long {
+        var x = v and 0x5555555555555555L
+        x = (x or (x shr 1)) and 0x3333333333333333L
+        x = (x or (x shr 2)) and 0x0F0F0F0F0F0F0F0FL
+        x = (x or (x shr 4)) and 0x00FF00FF00FF00FFL
+        x = (x or (x shr 8)) and 0x0000FFFF0000FFFFL
+        x = (x or (x shr 16)) and 0x00000000FFFFFFFFL
+        return x
+    }
 }

@@ -617,18 +617,20 @@ sealed class RedisCommand {
 
             val positions = mutableListOf<RedisValue>()
             for (memberName in memberNames) {
-                val encodedPosition = store.zscore(setName, memberName.value)
+                val geoHash = store.zscore(setName, memberName.value)
 
-                if (encodedPosition == null) {
+                if (geoHash == null) {
                     positions.add(RedisValue.NullArray())
                     continue
                 }
 
+                val decoded = GeoHash.decode(geoHash)
+
                 positions.add(
                     RedisValue.Array(
                         listOf(
-                            RedisValue.BulkString("0"),
-                            RedisValue.BulkString("0")
+                            RedisValue.BulkString(decoded.first.toString()),
+                            RedisValue.BulkString(decoded.second.toString())
                         )
                     )
                 )
