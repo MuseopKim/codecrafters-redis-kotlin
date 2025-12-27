@@ -9,6 +9,7 @@ import store.config.Configs
 import store.geo.GeoHash
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
+import java.math.BigDecimal
 import java.util.*
 import java.util.concurrent.TimeoutException
 
@@ -515,9 +516,15 @@ sealed class RedisCommand {
             val memberName = arguments.getBulkString(1)?.value
                 ?: return RedisValue.SimpleErrors("Invalid arguments.")
 
-            val score = store.zscore(setName, memberName)
+            val score = store.zscore(setName, memberName) ?: return RedisValue.NullBulkString
 
-            return score?.let { RedisValue.BulkString(it.toString()) } ?: RedisValue.NullBulkString
+            val normalizedScore = if (score == score.toLong().toDouble()) {
+                score.toLong().toString()
+            } else {
+                score.toString()
+            }
+
+            return RedisValue.BulkString(normalizedScore)
         }
     }
 
