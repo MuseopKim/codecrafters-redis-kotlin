@@ -76,6 +76,13 @@ class CommandDispatcher {
             "UNSUBSCRIBE" -> RedisCommand.UNSUBSCRIBE
             "PUBLISH" -> RedisCommand.PUBLISH
 
+            "ACL" -> {
+                when (arguments.getBulkString(0)?.value?.uppercase()) {
+                    "WHOAMI" -> RedisCommand.ACL.WHOAMI
+                    else -> throw IllegalArgumentException("Unknown command")
+                }
+            }
+
             else -> throw IllegalArgumentException("Unknown command")
         }
 

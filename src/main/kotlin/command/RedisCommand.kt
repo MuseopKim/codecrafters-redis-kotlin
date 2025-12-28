@@ -1122,6 +1122,29 @@ sealed class RedisCommand {
         }
     }
 
+    object ACL {
+
+        object WHOAMI : RedisCommand() {
+
+            override fun isReplicable(): Boolean = false
+
+            override fun execute(
+                session: Session,
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                return RedisValue.BulkString(session.username)
+            }
+
+            override fun execute(
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                throw UnsupportedOperationException("ACL command with no session is not supported.")
+            }
+        }
+    }
+
     data class Entry(
         val command: RedisCommand,
         val arguments: List<RedisValue>

@@ -13,6 +13,7 @@ class Session(
     var type: Type = Type.CLIENT
     private var state: State = State.NORMAL
     var offset: Long = 0
+    var username: String = "default"
 
     private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
 
