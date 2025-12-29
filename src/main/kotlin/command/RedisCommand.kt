@@ -1143,6 +1143,38 @@ sealed class RedisCommand {
                 throw UnsupportedOperationException("ACL command with no session is not supported.")
             }
         }
+
+        object GETUSER : RedisCommand() {
+
+            override fun isReplicable(): Boolean = false
+
+            override fun execute(
+                session: Session,
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                val username = arguments.getBulkString(1)?.value
+                    ?: return RedisValue.SimpleErrors("GETUSER command without arguments.")
+
+                val user = store.getuser(username)
+
+                val flags = user?.flags ?: emptyList()
+
+                return RedisValue.Array(
+                    listOf(
+                        RedisValue.BulkString("flags"),
+                        RedisValue.Array(flags.map { RedisValue.BulkString(it) })
+                    )
+                )
+            }
+
+            override fun execute(
+                arguments: List<RedisValue>,
+                store: RedisDataStore
+            ): RedisValue {
+                throw UnsupportedOperationException("ACL command with no session is not supported.")
+            }
+        }
     }
 
     data class Entry(

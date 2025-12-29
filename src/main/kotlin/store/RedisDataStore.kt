@@ -2,6 +2,8 @@ package store
 
 import Session
 import protocol.RedisDataType
+import store.authentication.Authentication
+import store.authentication.User
 import store.config.Configs
 import store.lists.Lists
 import store.pubsub.PubSub
@@ -31,7 +33,8 @@ class RedisDataStore {
         streams to RedisDataType.STREAM
     )
     private val configs = Configs()
-    private val pubsub: PubSub = PubSub()
+    private val pubsub = PubSub()
+    private val authentication = Authentication()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
@@ -199,6 +202,10 @@ class RedisDataStore {
 
     fun publish(channelName: String, message: String): Long {
         return pubsub.publish(channelName, message)
+    }
+
+    fun getuser(username: String): User? {
+        return authentication.getUser(username)
     }
 
     fun <R> atomic(operation: () -> R): R {

@@ -79,6 +79,7 @@ class CommandDispatcher {
             "ACL" -> {
                 when (arguments.getBulkString(0)?.value?.uppercase()) {
                     "WHOAMI" -> RedisCommand.ACL.WHOAMI
+                    "GETUSER" -> RedisCommand.ACL.GETUSER
                     else -> throw IllegalArgumentException("Unknown command")
                 }
             }
