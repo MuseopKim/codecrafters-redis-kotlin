@@ -18,4 +18,8 @@ class Authentication(
     fun getUser(username: String): User? {
         return users[username]
     }
+
+    fun getUser(username: String, password: String): User? {
+        return users[username]?.takeIf { it.hasPassword(password) }
+    }
 }

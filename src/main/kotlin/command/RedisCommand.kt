@@ -9,7 +9,6 @@ import store.config.Configs
 import store.geo.GeoHash
 import store.streams.StreamIdGeneration
 import store.streams.StreamQuery
-import java.math.BigDecimal
 import java.util.*
 import java.util.concurrent.TimeoutException
 
@@ -1197,6 +1196,34 @@ sealed class RedisCommand {
             ): RedisValue {
                 throw UnsupportedOperationException("ACL command with no session is not supported.")
             }
+        }
+    }
+
+    object AUTH : RedisCommand() {
+
+        override fun isReplicable(): Boolean = false
+
+        override fun execute(
+            session: Session,
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            val username = arguments.getBulkString(0)?.value
+                ?: return RedisValue.SimpleErrors("AUTH command without arguments.")
+
+            val password = arguments.getBulkString(1)?.value
+                ?: return RedisValue.SimpleErrors("AUTH command without arguments.")
+
+            return store.auth(username, password)
+                ?.let { RedisValue.SimpleString("OK") }
+                ?: return RedisValue.SimpleErrors("WRONGPASS invalid username-password pair or user is disabled.")
+        }
+
+        override fun execute(
+            arguments: List<RedisValue>,
+            store: RedisDataStore
+        ): RedisValue {
+            throw UnsupportedOperationException("ACL command with no session is not supported.")
         }
     }
 

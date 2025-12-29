@@ -85,6 +85,8 @@ class CommandDispatcher {
                 }
             }
 
+            "AUTH" -> RedisCommand.AUTH
+
             else -> throw IllegalArgumentException("Unknown command")
         }
 

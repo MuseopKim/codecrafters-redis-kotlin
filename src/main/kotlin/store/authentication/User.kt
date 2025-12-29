@@ -23,6 +23,11 @@ data class User(
         passwords.add(encode(password))
     }
 
+    fun hasPassword(password: String): Boolean {
+        val encodedPassword = encode(password)
+        return passwords.any { encodedPassword == it }
+    }
+
     private fun encode(password: String): String {
         return MessageDigest.getInstance("SHA-256")
             .digest(password.toByteArray())

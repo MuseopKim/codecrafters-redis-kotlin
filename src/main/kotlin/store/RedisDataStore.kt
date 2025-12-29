@@ -208,6 +208,10 @@ class RedisDataStore {
         return authentication.getUser(username)
     }
 
+    fun auth(username: String, password: String) : User? {
+        return authentication.getUser(username, password)
+    }
+
     fun <R> atomic(operation: () -> R): R {
         lock.lock()
         return try {
