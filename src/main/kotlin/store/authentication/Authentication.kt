@@ -1,10 +1,15 @@
 package store.authentication
 
 class Authentication(
-    private val users: MutableMap<String, User> = mutableMapOf(
-        "default" to User("default")
+    val users: MutableMap<String, User> = mutableMapOf(
+        "default" to DEFAULT_USER
     )
 ) {
+
+    companion object {
+
+        val DEFAULT_USER = User("default", mutableListOf("nopass"))
+    }
 
     fun getUser(username: String): User? {
         return users[username]
