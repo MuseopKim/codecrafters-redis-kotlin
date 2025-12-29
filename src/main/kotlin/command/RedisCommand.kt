@@ -1156,16 +1156,9 @@ sealed class RedisCommand {
                 val username = arguments.getBulkString(1)?.value
                     ?: return RedisValue.SimpleErrors("GETUSER command without arguments.")
 
-                val user = store.getuser(username)
+                val user = store.getuser(username) ?: return RedisValue.NullBulkString
 
-                val flags = user?.flags ?: emptyList()
-
-                return RedisValue.Array(
-                    listOf(
-                        RedisValue.BulkString("flags"),
-                        RedisValue.Array(flags.map { RedisValue.BulkString(it) })
-                    )
-                )
+                return user.toRedisValue()
             }
 
             override fun execute(

@@ -8,7 +8,11 @@ class Authentication(
 
     companion object {
 
-        val DEFAULT_USER = User("default", mutableListOf("nopass"))
+        val DEFAULT_USER = User(
+            username = "default",
+            flags = mutableListOf("nopass"),
+            passwords = mutableListOf()
+        )
     }
 
     fun getUser(username: String): User? {
