@@ -1132,7 +1132,19 @@ sealed class RedisCommand {
                 arguments: List<RedisValue>,
                 store: RedisDataStore
             ): RedisValue {
-                return RedisValue.BulkString(session.username)
+                val sessionUser = session.user
+                val storedUser = store.getuser(sessionUser.username)
+                    ?: return RedisValue.SimpleErrors("NOAUTH Authentication required.")
+
+                if ("nopass" in storedUser.flags) {
+                    return RedisValue.BulkString(sessionUser.username)
+                }
+
+                if (sessionUser.passwords.any { it in storedUser.passwords }) {
+                    return RedisValue.BulkString(sessionUser.username)
+                }
+
+                return RedisValue.SimpleErrors("NOAUTH Authentication required.")
             }
 
             override fun execute(
@@ -1185,7 +1197,10 @@ sealed class RedisCommand {
 
                 val user = store.getuser(username) ?: return RedisValue.NullBulkString
 
-                user.setProperty(property)
+                val modified = user.setProperty(property)
+
+                session.user = modified
+                store.authentication.users.put(modified.username, modified)
 
                 return RedisValue.SimpleString("OK")
             }
@@ -1215,7 +1230,10 @@ sealed class RedisCommand {
                 ?: return RedisValue.SimpleErrors("AUTH command without arguments.")
 
             return store.auth(username, password)
-                ?.let { RedisValue.SimpleString("OK") }
+                ?.let {
+                    session.user = it
+                    RedisValue.SimpleString("OK")
+                }
                 ?: return RedisValue.SimpleErrors("WRONGPASS invalid username-password pair or user is disabled.")
         }
 

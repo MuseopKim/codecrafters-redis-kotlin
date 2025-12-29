@@ -2,7 +2,7 @@ package store.authentication
 
 class Authentication(
     val users: MutableMap<String, User> = mutableMapOf(
-        "default" to DEFAULT_USER
+        "default" to DEFAULT_USER.deepCopy()
     )
 ) {
 

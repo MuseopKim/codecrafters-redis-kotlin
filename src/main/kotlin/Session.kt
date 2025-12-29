@@ -1,6 +1,8 @@
 import command.RedisCommand
 import protocol.RedisValue
 import replication.Replication
+import store.authentication.Authentication
+import store.authentication.User
 import java.util.concurrent.ConcurrentHashMap
 
 class Session(
@@ -13,7 +15,7 @@ class Session(
     var type: Type = Type.CLIENT
     private var state: State = State.NORMAL
     var offset: Long = 0
-    var username: String = "default"
+    var user: User = Authentication.DEFAULT_USER.deepCopy()
 
     private val commands: MutableList<RedisCommand.Entry> = mutableListOf()
 

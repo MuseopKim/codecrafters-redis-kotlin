@@ -34,7 +34,7 @@ class RedisDataStore {
     )
     private val configs = Configs()
     private val pubsub = PubSub()
-    private val authentication = Authentication()
+    val authentication = Authentication()
     private val lockConditions = mutableMapOf<String, Condition>()
 
     fun set(key: String, value: String, px: Long? = null) {
